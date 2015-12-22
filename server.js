@@ -28,6 +28,10 @@ app.set('port', process.env.PORT || 3000);
 
 function initServer() {
     // add any async initializations here
+    //NOTES:
+    // - etcd is must for starting, RabbitMQ does not prevent start (it is in finally section)
+    // - STS (AUTH_SERVER) location is collected by middleware on demand and is not a part of server startup
+
     Q.fcall(persistenceController.initEtcdConnection).then(function(){
         Q.fcall(amqpController.initAmq(true)).finally(function () {
             server = app.listen(app.get('port'), function () {

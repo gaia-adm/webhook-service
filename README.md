@@ -1,6 +1,6 @@
 CircleCI build status: [![Circle CI](https://circleci.com/gh/gaia-adm/webhook-service.svg?style=svg)](https://circleci.com/gh/gaia-adm/webhook-service)
 
-Service for generating webhook tokens and accepting webhooks data (and possibly in the future - setting periodical data collection in cloud-based agent)
+Service for generating webhook tokens and accepting webhooks data
 
 ### Dependencies:
  - etcd - for saving generated webhook tokens
@@ -21,10 +21,11 @@ POST: <server>:<port>/wh/config
     {
         "datasource": "github",
         "eventType": "push",
-        "createdAt": 1450357761505,
-        "token": "edf32766432ac20423cdd45e72f101dc6940f738",
-        "hookUrl": "https://<server>:<port>/wh/edf32766432ac20423cdd45e72f101dc6940f738",
-        "tenantId": 1048568626
+        "createdAt": 1450778008713,
+        "apiToken": "f0cf847f-0bf4-4777-9a28-59b7a4b48309",
+        "tenantId": 5618780000,
+        "token": "7a8b7747fb02189cee0a3e62d0e717460923d945",
+        "hookUrl": "https://localhost:3000/wh/f0cf847f-0bf4-4777-9a28-59b7a4b48309/7a8b7747fb02189cee0a3e62d0e717460923d945"
     }
 ```
 
@@ -32,9 +33,10 @@ POST: <server>:<port>/wh/config
 Add the hookUrl (see above) to webhooks configuration
 
 ### Flow
-When webhook data received, the webhook token is validated.
-If WH token is valid (e.g., existing in the system):
-  - tenantId is added to HTTP headers of the request
+When webhook data received, the API token and Webhook token are validated.
+If both are valid (e.g., existing in the system):
+  - tenantId header is added to HTTP headers of the request
+  - gaiaReceived header is added to HTTP headers of the request (ISO 8601 date/time, where the data is received)
   - ES _bulk API metadata is created (index - gaia_tenantId, type - eventType.datasource) and added before the webhook data; metadata is followed by a new line delimiter, as _bulk API requires
   - message is published to ES EventsIndexer queue while updated request headers are set as the message header
 
