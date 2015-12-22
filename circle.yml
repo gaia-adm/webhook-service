@@ -1,0 +1,38 @@
+machine:
+  pre:
+    - echo 'DOCKER_OPTS="-s btrfs -e lxc -D --userland-proxy=false"' | sudo tee -a /etc/default/docker
+    - sudo curl -L -o /usr/bin/docker 'https://s3-external-1.amazonaws.com/circle-downloads/docker-1.9.0-circleci-cp-workaround'
+    - sudo chmod 0755 /usr/bin/docker
+  services:
+    - docker
+dependencies:
+  override:
+    - docker build -t gaiaadm/tcs .
+    - docker tag gaiaadm/tcs gaiaadm/tcs:$CIRCLE_BUILD_NUM
+test:
+  override:
+    - docker run -d --name rabbitmq gaiaadm/rabbitmq; sleep 10
+    # run etcd since we are not on coreos
+    - docker run -d --name etcd microbox/etcd:2.1.1 -name etcd --listen-client-urls 'http://0.0.0.0:4001' --advertise-client-urls 'http://0.0.0.0:4001'; sleep 5
+    - docker run -d -u jetty --link etcd:etcd -e etcdUrl="http://etcd:4001" --name sts gaiaadm/sts; sleep 10
+    # run jshint
+    - docker run --name jshint-runner gaiaadm/tcs grunt jshint -v
+    # run unit tests
+    - docker run --name unit-test-runner gaiaadm/tcs grunt unit -v
+    - docker cp unit-test-runner:/src/unit-test-results.xml $CIRCLE_TEST_REPORTS
+    # run integration tests
+    - docker run  --name integration-test-runner --link rabbitmq:rabbitmq --link sts:sts --link etcd:etcd -e AMQ_USER="admin" -e AMQ_SERVER="rabbitmq:5672" -e ETCD_SERVER="etcd:4001" -e AUTH_SERVER="sts:8080"  -p 3210:3000  -e LOG_LEVEL="DEBUG"  gaiaadm/tcs grunt integration -v
+    - docker cp integration-test-runner:/src/integration-test-results.xml $CIRCLE_TEST_REPORTS
+deployment:
+  hub:
+    branch: master
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push gaiaadm/tcs
+notify:
+  webhooks:
+    - url: http://ec2-52-77-211-205.ap-southeast-1.compute.amazonaws.com:3000/wh/2bba75821e30860a7582f4aafc13124e827dbb9c
+general:
+  branches:
+    only:
+      - master
