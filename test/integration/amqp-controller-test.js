@@ -163,6 +163,9 @@ describe('notification tests', function () {
         if ((!process.env.AMQ_USER)) {
             process.env.AMQ_USER = 'admin';
         }
+        if ((!process.env.AMQ_PASSWORD)) {
+            process.env.AMQ_PASSWORD = 'admin';
+        }
         if ((!process.env.AMQ_SERVER)) {
             process.env.AMQ_SERVER = 'localhost:5672';
         }
