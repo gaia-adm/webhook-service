@@ -10,7 +10,7 @@ Service for generating webhook tokens and accepting webhooks data
 ### Generating webhook:
 **Request**
 ```
-POST: <server>:<port>/wh/config
+POST: https://mydomain.gaiahub.io:444/wh/config
     Content-Type, Accept: application/json
     Authorization: Bearer <accesstoken>
     { "datasource":"github",
@@ -25,7 +25,7 @@ POST: <server>:<port>/wh/config
         "apiToken": "f0cf847f-0bf4-4777-9a28-59b7a4b48309",
         "tenantId": 5618780000,
         "token": "7a8b7747fb02189cee0a3e62d0e717460923d945",
-        "hookUrl": "https://localhost:3000/wh/f0cf847f-0bf4-4777-9a28-59b7a4b48309/7a8b7747fb02189cee0a3e62d0e717460923d945"
+        "hookUrl": "https://mydomain.gaiahub.io:444/wh/f0cf847f-0bf4-4777-9a28-59b7a4b48309/7a8b7747fb02189cee0a3e62d0e717460923d945"
     }
 ```
 
