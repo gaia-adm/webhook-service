@@ -31,7 +31,7 @@ deployment:
       - docker push gaiaadm/whs
 notify:
   webhooks:
-    - url: http://ec2-52-77-211-205.ap-southeast-1.compute.amazonaws.com:3000/wh/2bba75821e30860a7582f4aafc13124e827dbb9c
+    - url: http://beta.gaiahub.io:88/wh/5a866f9b-98c9-438d-a8d4-53cf4ae9599c/4c310c8e220ee9bead74eece42ce0e109fd3535e
 general:
   branches:
     only:
