@@ -57,6 +57,32 @@ router.delete('/wh/config/:hookToken', function (req, res) {
 
 });
 
+//Trello issues HEAD request to the Webhook URL during configuration in order to check URL validness
+//This method answers with empty HTTP-200, if the URL is valid
+router.head('/wh/:oauthToken/:hookToken', function (req, res) {
+    var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+    db.get(req.params.hookToken).then(function (tokenDetails) {
+        if (tokenDetails.node.value) {
+            logger.trace('TOKEN DETAILS: ' + JSON.stringify(tokenDetails.node.value));
+            var jsonValue = JSON.parse(tokenDetails.node.value);
+            var eType = jsonValue ? jsonValue.eventType : null;
+            var datasource = jsonValue ? jsonValue.datasource : null;
+            var tenantId = jsonValue.tenantId;
+            if (eType && tenantId && datasource) {
+                logger.debug('Webhook URL checked and found valid: ' + fullUrl);
+                res.status(HttpStatus.OK).send();
+            }
+        } else {
+            logger.debug('Webhook URL checked and found INVALID due to invalid structure: ' + fullUrl);
+            res.status(HttpStatus.BAD_REQUEST).send();
+        }
+    }).fail(function (err) {
+        //failure due to token problems
+        logger.error(getFullError(err));
+        res.status(HttpStatus.BAD_REQUEST).json({status: 'error', msg: 'Invalid Webhook URL in use'});
+    });
+});
+
 router.post('/wh/:oauthToken/:hookToken', function (req, res) {
 
     /*    logger.debug('URL: ' + (req.protocol + '://' + req.get('Host') + req.originalUrl));
@@ -72,7 +98,7 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
             var datasource = jsonValue ? jsonValue.datasource : null;
             var tenantId = jsonValue.tenantId;
             if (eType && tenantId && datasource) {
-                logger.debug('PUSHING DATA FOR TENANT: ' + tenantId + ', data type: ' + eType+'.'+datasource);
+                logger.debug('PUSHING DATA FOR TENANT: ' + tenantId + ', data type: ' + eType + '.' + datasource);
                 var lineSeparator = '\n';
                 var wordSeparator = '.';
                 req.headers.tenantId = jsonValue.tenantId;
@@ -88,7 +114,10 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
                 }, function (err) {
                     logger.error('Failed to send data to event indexer queue: ' + JSON.stringify(metadata.index) + lineSeparator + JSON.stringify(req.body) + lineSeparator);
                     logger.error(getFullError(err));
-                    res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: 'Data push for event indexer failure'});
+                    res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                        status: 'error',
+                        msg: 'Data push for event indexer failure'
+                    });
                 });
             } else {
                 logger.error('Invalid token is stored in Etcd - event type is missing: ' + JSON.stringify(jsonValue));

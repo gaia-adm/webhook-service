@@ -279,6 +279,17 @@ describe('webhook tests', function () {
             });
         });
 
+        it('# validate url', function(done) {
+            var options = {
+                url: 'http://localhost:3000/wh/' + accessToken + '/' + webHookToken,
+                headers: eventHeaders
+            };
+            request.head(options, function (err, res) {
+                expect(res.statusCode).to.equal(200);
+                done();
+            });
+        });
+
         it('# push data', function (done) {
 
             var options = {
@@ -291,7 +302,7 @@ describe('webhook tests', function () {
                 done();
             });
 
-        })
+        });
 
         it('# push data with INVALID hook token', function (done) {
 
