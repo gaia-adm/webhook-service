@@ -71,8 +71,8 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
             var eType = jsonValue ? jsonValue.eventType : null;
             var datasource = jsonValue ? jsonValue.datasource : null;
             var tenantId = jsonValue.tenantId;
-            logger.debug('PUSHING DATA FOR TENANT: ' + tenantId);
             if (eType && tenantId && datasource) {
+                logger.debug('PUSHING DATA FOR TENANT: ' + tenantId + ', data type: ' + eType+'.'+datasource);
                 var lineSeparator = '\n';
                 var wordSeparator = '.';
                 req.headers.tenantId = jsonValue.tenantId;
