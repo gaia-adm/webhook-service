@@ -31,6 +31,7 @@ POST: https://mydomain.gaiahub.io:444/wh/config
 
 ### Pushing data
 Add the hookUrl (see above) to webhooks configuration
+NOTE: Meanwhile there is no restriction of using webhook generated for certain eventType/datasource with different eventType/datasource so use carefully.
 
 ### Flow
 When webhook data received, the API token and Webhook token are validated.
