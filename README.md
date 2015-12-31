@@ -1,6 +1,4 @@
-[![](https://badge.imagelayers.io/gaiaadm/whs:latest.svg)](https://imagelayers.io/?images=gaiaadm/whs:latest 'Get your own badge on imagelayers.io')
-
-*CircleCI* [![Circle CI](https://circleci.com/gh/gaia-adm/webhook-service.svg?style=svg)](https://circleci.com/gh/gaia-adm/webhook-service)
+[![Circle CI](https://circleci.com/gh/gaia-adm/webhook-service.svg?style=svg)](https://circleci.com/gh/gaia-adm/webhook-service) [![Codacy Badge](https://api.codacy.com/project/badge/grade/2e1a8ea1940c465887a4cff3ddf916f6)](https://www.codacy.com/app/alexei-led/webhook-service) [![](https://badge.imagelayers.io/gaiaadm/whs:latest.svg)](https://imagelayers.io/?images=gaiaadm/whs:latest 'Get your own badge on imagelayers.io')
 
 Service for generating webhook tokens and accepting webhooks data
 
