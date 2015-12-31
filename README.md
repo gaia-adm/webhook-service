@@ -1,4 +1,6 @@
-CircleCI build status: [![Circle CI](https://circleci.com/gh/gaia-adm/webhook-service.svg?style=svg)](https://circleci.com/gh/gaia-adm/webhook-service)
+[![](https://badge.imagelayers.io/gaiaadm/whs:latest.svg)](https://imagelayers.io/?images=gaiaadm/whs:latest 'Get your own badge on imagelayers.io')
+
+*CircleCI* [![Circle CI](https://circleci.com/gh/gaia-adm/webhook-service.svg?style=svg)](https://circleci.com/gh/gaia-adm/webhook-service)
 
 Service for generating webhook tokens and accepting webhooks data
 
