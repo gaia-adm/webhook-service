@@ -193,7 +193,7 @@ function closeConnection() {
         return conn.close();
     } else {
         return Q.fcall(function () {
-            return "Connection is already closed";
+            return 'Connection is already closed';
         });
     }
 }
@@ -208,7 +208,7 @@ function closeChannel() {
         return channel.close();
     } else {
         return Q.fcall(function () {
-            return "Channel is already closed";
+            return 'Channel is already closed';
         });
     }
 }
