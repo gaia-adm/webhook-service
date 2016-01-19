@@ -19,7 +19,7 @@ router.use('/wh/:oauthToken/:hookToken', auth.setAuthorizationHeader);
 router.use('/wh/config*', auth.authorise);
 router.use('/wh/config*', auth.errorHandler);
 
-var RABBIT_TIMEOUT_MSEC = 3000;
+var RABBIT_TIMEOUT_MSEC = 10000;
 
 router.post('/wh/config', function (req, res) {
 
@@ -98,21 +98,16 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
             var datasource = jsonValue ? jsonValue.datasource : null;
             var tenantId = jsonValue.tenantId;
             if (eType && tenantId && datasource) {
-                logger.debug('PUSHING DATA FOR TENANT: ' + tenantId + ', data type: ' + eType + '.' + datasource);
+                logger.debug('PUSHING DATA FOR TENANT: ' + tenantId + ',data source: ' +  datasource + ', data type: ' + eType);
                 var lineSeparator = '\n';
                 var wordSeparator = '.';
-                req.headers.tenantId = jsonValue.tenantId;
-                req.headers.gaiaReceived = new Date().toISOString();
-                var metadata = {};
-                metadata.index = {};
-                metadata.index._index = 'gaia_' + tenantId;
-                metadata.index._type = eType + wordSeparator + datasource;
-                var content = JSON.stringify(metadata) + lineSeparator + JSON.stringify(req.body) + lineSeparator;
-                amqp.sendToIndexer(req.headers, content).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
-                    logger.trace('Successfully sent to event_indexer queue: ' + JSON.stringify(metadata.index) + lineSeparator + JSON.stringify(req.body) + lineSeparator);
+                var routingKey = 'event' + wordSeparator + tenantId + wordSeparator + datasource + wordSeparator + eType;
+                var content = JSON.stringify(req.body);
+                amqp.sendToIndexer(routingKey, content).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
+                    logger.trace('Successfully sent to RabbitMQ: ' + JSON.stringify(req.body) + lineSeparator);
                     res.status(HttpStatus.NO_CONTENT).send();
                 }, function (err) {
-                    logger.error('Failed to send data to event indexer queue: ' + JSON.stringify(metadata.index) + lineSeparator + JSON.stringify(req.body) + lineSeparator);
+                    logger.error('Failed to send data to RabbitMQ: ' + JSON.stringify(req.body) + lineSeparator);
                     logger.error(getFullError(err));
                     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                         status: 'error',
