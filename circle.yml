@@ -8,7 +8,8 @@ machine:
 dependencies:
   override:
     - docker build -t gaiaadm/whs .
-    - docker tag gaiaadm/whs gaiaadm/whs:$CIRCLE_BUILD_NUM
+    - docker tag gaiaadm/whs gaiaadm/whs:$CIRCLE_BUILD_NUM-$CIRCLE_BRANCH
+    - docker tag gaiaadm/whs gaiaadm/whs:$CIRCLE_BRANCH
 test:
   override:
     - docker run -d -e "RABBITMQ_PASS=admin" --name rabbitmq gaiaadm/rabbitmq; sleep 10
@@ -24,15 +25,21 @@ test:
     - docker run  --name integration-test-runner --link rabbitmq:rabbitmq --link sts:sts --link etcd:etcd -e AMQ_USER="admin" -e AMQ_PASSWORD="admin" -e AMQ_SERVER="rabbitmq:5672" -e ETCD_SERVER="etcd:4001" -e AUTH_SERVER="sts:8080"  -p 3210:3000  -e LOG_LEVEL="DEBUG"  gaiaadm/whs grunt integration -v
     - docker cp integration-test-runner:/src/integration-test-results.xml $CIRCLE_TEST_REPORTS
 deployment:
-  hub:
+  master:
     branch: master
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push gaiaadm/whs
+  develop:
+    branch: develop
+    commands:
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push gaiaadm/whs
+  feature:
+    branch: /feature_.*/
     commands:
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push gaiaadm/whs
 notify:
   webhooks:
     - url: http://beta.gaiahub.io:88/wh/5a866f9b-98c9-438d-a8d4-53cf4ae9599c/4c310c8e220ee9bead74eece42ce0e109fd3535e
-general:
-  branches:
-    only:
-      - master
