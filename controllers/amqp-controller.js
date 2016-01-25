@@ -8,7 +8,6 @@ var getFullError = errorUtils.getFullError;
 var amqp = require('amqplib');
 var Q = require('q');
 
-var EVENT_INDEXER_QUEUE = 'es-events-indexer';
 var channel = null;
 var conn = null;
 
@@ -60,16 +59,8 @@ function connectAmqServer(handleReconnect) {
             }
         }
 
-        function cleanup() {
-            conn.removeListener('close', onClose);
-            conn.removeListener('error', onError);
-            conn.removeListener('close', cleanup);
-        }
-
-
         connection.on('close', onClose);
         connection.on('error', onError);
-        connection.on('close', cleanup);
 
         conn = connection;
 
@@ -87,7 +78,7 @@ function connectAmqServer(handleReconnect) {
  * @returns promise
  */
 function initChannel(conn) {
-    var ok = conn.createConfirmChannel().then(function (ch) {
+    var ok = conn.createChannel().then(function (ch) {
         function onClose() {
             logger.info('AMQ channel is closed');
             channel = null;
@@ -101,20 +92,18 @@ function initChannel(conn) {
         function cleanup() {
             ch.removeListener('close', onClose);
             ch.removeListener('error', onError);
-
             ch.removeListener('close', cleanup);
         }
 
         ch.on('close', onClose);
         ch.on('error', onError);
-
         ch.on('close', cleanup);
 
         channel = ch;
 
-        return ch.assertQueue(EVENT_INDEXER_QUEUE, {durable: true}).then(function(){
+        return ch.assertExchange('events-to-index', 'topic', {durable: true}).then(function() {
             reconnectCounter = 0;
-            logger.debug('Queue ' + EVENT_INDEXER_QUEUE + ' has been asserted into existence');
+            logger.debug('Exchange \'events-to-index\' has been asserted into existence');
         });
     });
     return ok;
@@ -214,32 +203,32 @@ function closeChannel() {
 }
 
 /**
- * Sends webhook data to event-indexer.
- * @param hookHeaders: future message header, includes HTTP headers of the webhook call as well as the tenant id
- * @param content: future message payload, includes ElasticSearch _bulk API metadata and webhook event content
+ * Sends webhook data to events-to-index exchange
+ * @param routingKey: RabbitMQ routingKey. Need to be in the format of: "event.TENANT_ID.DATA_SOURCE.DATA_TYPE"
+ * @param content: webhook event content
  * @returns promise
  */
-function sendToIndexer(hookHeaders, content) {
+function sendToIndexer(routingKey, content) {
 
     return Q.Promise(function (resolve, reject) {
         if (!channel) {
             reject(new Error('Notification channel is not ready'));
         } else {
-
-            // Todo - boris: amqplib bug workaround - https://github.com/squaremo/amqp.node/issues/179.
-            // NOT SURE IF APPLICABLE to sendToQueue!!!
-            // If exists, add assertQueue and then sendToQueue
-            channel.sendToQueue('es-events-indexer', new Buffer(content), {
+            var bufferNotFull = channel.publish('events-to-index', routingKey, new Buffer(content), {
                 mandatory: false,
-                persistent: true,
-                headers: hookHeaders
-            }, function (err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
+                persistent: true
             });
+
+            //amqplib returns true even if RabbitMQ is down, the send operation will fail
+            //only when the connection will be closed (automatically after few seconds)
+            //and the channel will be null
+            //I've opened this issue in amqplib github account: https://github.com/squaremo/amqp.node/issues/220
+            if (bufferNotFull) {
+                resolve();
+            }
+            else{
+                reject();
+            }
         }
     });
 }

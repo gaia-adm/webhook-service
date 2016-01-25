@@ -10,17 +10,8 @@ describe('notification tests', function () {
     var amqConn;
     var amqCh;
     var RABBIT_TIMEOUT_MSEC = 3000;
-    var amqQueue = 'notification-test-queue';
-    var routingKey = amqQueue;
-    var eventHeaders = {
-        'Request URL': 'https://circleci.com/hooks/github',
-        'Request method': 'POST',
-        'content-type': 'application/x-www-form-urlencoded',
-        'Expect': 'User-Agent: GitHub-Hookshot/f671e41',
-        'X-GitHub-Delivery': '741e6b80-9f32-11e5-8f65-521db3377f06',
-        'X-GitHub-Event': 'push',
-        'X-Hub-Signature': 'sha1=8eb2fc22c38d33fc3869e192b11666f20bcdec55'
-    };
+    var amqExchange = 'events-to-index';
+    var routingKey = 'event.123211.github.push';
     var eventContent = {
         "ref": "refs/heads/master",
         "before": "bd5c21118340b74aa2531aeae8648f217562086d",
@@ -167,7 +158,7 @@ describe('notification tests', function () {
             process.env.AMQ_PASSWORD = 'admin';
         }
         if ((!process.env.AMQ_SERVER)) {
-            process.env.AMQ_SERVER = 'localhost:5672';
+            process.env.AMQ_SERVER = '172.17.8.101:5672';
         }
         notification.initAmq(false).done(function onOk() {
             done();
@@ -180,10 +171,8 @@ describe('notification tests', function () {
         amqp.connect(getAmqUrl()).then(function (conn) {
             return conn.createChannel().then(function (ch) {
                 amqCh = ch;
-                return ch.assertQueue(amqQueue, {
-                    exclusive: false,
-                    durable: false,
-                    autoDelete: false
+                return ch.assertExchange(amqExchange, 'topic', {
+                    durable: true
                 }).then(function () {
                     done();
                 });
@@ -208,7 +197,7 @@ describe('notification tests', function () {
     });
 
     it('#send notification must succeed', function () {
-        return notification.sendToIndexer(eventHeaders, eventContent).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
+        return notification.sendToIndexer(routingKey, eventContent).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
         }, function (err) {
             assert.fail(true, false, 'problem: ' + err.message);
         }).fail(function (error) {
