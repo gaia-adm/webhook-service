@@ -10,7 +10,7 @@ describe('notification tests', function () {
     var amqConn;
     var amqCh;
     var RABBIT_TIMEOUT_MSEC = 3000;
-    var amqExchange = 'events-to-index';
+    var amqExchange = 'events-to-enrich';
     var routingKey = 'event.123211.github.push';
     var eventContent = {
         "ref": "refs/heads/master",
@@ -197,7 +197,7 @@ describe('notification tests', function () {
     });
 
     it('#send notification must succeed', function () {
-        return notification.sendToIndexer(routingKey, eventContent).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
+        return notification.sendToEnricher(routingKey, eventContent).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
         }, function (err) {
             assert.fail(true, false, 'problem: ' + err.message);
         }).fail(function (error) {

@@ -103,7 +103,7 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
                 var wordSeparator = '.';
                 var routingKey = 'event' + wordSeparator + tenantId + wordSeparator + datasource + wordSeparator + eType;
                 var content = JSON.stringify(req.body);
-                amqp.sendToIndexer(routingKey, content).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
+                amqp.sendToEnricher(routingKey, content).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
                     logger.trace('Successfully sent to RabbitMQ: ' + JSON.stringify(req.body) + lineSeparator);
                     res.status(HttpStatus.NO_CONTENT).send();
                 }, function (err) {
@@ -111,7 +111,7 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
                     logger.error(getFullError(err));
                     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                         status: 'error',
-                        msg: 'Data push for event indexer failure'
+                        msg: 'Data push for event enricher failure'
                     });
                 });
             } else {

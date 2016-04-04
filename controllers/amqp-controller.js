@@ -101,9 +101,9 @@ function initChannel(conn) {
 
         channel = ch;
 
-        return ch.assertExchange('events-to-index', 'topic', {durable: true}).then(function() {
+        return ch.assertExchange('events-to-enrich', 'topic', {durable: true}).then(function() {
             reconnectCounter = 0;
-            logger.debug('Exchange \'events-to-index\' has been asserted into existence');
+            logger.debug('Exchange \'events-to-enrich\' has been asserted into existence');
         });
     });
     return ok;
@@ -203,18 +203,18 @@ function closeChannel() {
 }
 
 /**
- * Sends webhook data to events-to-index exchange
+ * Sends webhook data to events-to-enrich exchange
  * @param routingKey: RabbitMQ routingKey. Need to be in the format of: "event.TENANT_ID.DATA_SOURCE.DATA_TYPE"
  * @param content: webhook event content
  * @returns promise
  */
-function sendToIndexer(routingKey, content) {
+function sendToEnricher(routingKey, content) {
 
     return Q.Promise(function (resolve, reject) {
         if (!channel) {
             reject(new Error('Notification channel is not ready'));
         } else {
-            var bufferNotFull = channel.publish('events-to-index', routingKey, new Buffer(content), {
+            var bufferNotFull = channel.publish('events-to-enrich', routingKey, new Buffer(content), {
                 mandatory: false,
                 persistent: true
             });
@@ -236,4 +236,4 @@ function sendToIndexer(routingKey, content) {
 
 exports.initAmq = initAmq;
 exports.shutdown = shutdown;
-exports.sendToIndexer = sendToIndexer;
+exports.sendToEnricher = sendToEnricher;

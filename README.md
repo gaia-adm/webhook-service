@@ -36,10 +36,8 @@ NOTE: Meanwhile there is no restriction of using webhook generated for certain e
 ### Flow
 When webhook data received, the API token and Webhook token are validated.
 If both are valid (e.g., existing in the system):
-  - tenantId header is added to HTTP headers of the request
-  - gaiaReceived header is added to HTTP headers of the request (ISO 8601 date/time, where the data is received)
-  - ES _bulk API metadata is created (index - gaia_tenantId, type - eventType.datasource) and added before the webhook data; metadata is followed by a new line delimiter, as _bulk API requires
-  - message is published to ES EventsIndexer queue while updated request headers are set as the message header
+  - routingkey in the format of event.TENANT_ID.DATA_SOURCE.DATA_TYPE is created
+  - message is published to events-to-enrich exchange
 
 ### Supported webhooks
 Since the entire flow - from sending data to storing it into ES - is very generic and data is fluid, we can accept webhook for any event type from any source sending JSON data.
