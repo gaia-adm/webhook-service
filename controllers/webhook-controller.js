@@ -21,6 +21,7 @@ router.use('/wh/config*', auth.errorHandler);
 
 var RABBIT_TIMEOUT_MSEC = 10000;
 
+//Create webhook configuration
 router.post('/wh/config', function (req, res) {
 
     var respBody = {};
@@ -47,6 +48,7 @@ router.post('/wh/config', function (req, res) {
 
 });
 
+//Delete webhook configuration
 router.delete('/wh/config/:hookToken', function (req, res) {
 
     Q.fcall(db.delete, req.params.hookToken).then(function () {
@@ -57,32 +59,84 @@ router.delete('/wh/config/:hookToken', function (req, res) {
 
 });
 
+
+function validateTokenDetails(tokenDetails) {
+    logger.trace('TOKEN DETAILS: ' + JSON.stringify(tokenDetails.node.value));
+    var jsonValue;
+    try {
+        jsonValue = JSON.parse(tokenDetails.node.value);
+    } catch(e){
+        logger.error(getFullError(e));
+        //logger.error('Failed to parse value for token ' + JSON.stringify(tokenDetails));
+        return null;
+    }
+    var eType = jsonValue ? jsonValue.eventType : null;
+    var datasource = jsonValue ? jsonValue.datasource : null;
+    var tenantId = jsonValue.tenantId;
+    if (eType && tenantId && datasource) {
+        return jsonValue;
+    } else {
+        return null;
+    }
+}
+
+//Get webhook configuration by hook token
+router.get('/wh/config/:hookToken', function(req, res){
+    db.get(req.params.hookToken).then(function (tokenDetails) {
+        if (tokenDetails.node.value) {
+            var jsonValue = validateTokenDetails(tokenDetails);
+            if(jsonValue){
+                logger.debug('Webhook ' + req.params.hookToken + ' is OK and will be returned');
+                res.status(HttpStatus.OK).json(jsonValue);
+            } else {
+                //webhook is found but its configuraion is invalid: empty datasource/tenantId/eType
+                var message = 'Webhook details are broken for '+ req.params.hookToken;
+                logger.error(message);
+                res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: message});
+            }
+        } else {
+            //persistence layer has a reference (etcd key) but no data found (etcd value)
+            var message ='Webhook configuration is incorrect for '+ req.params.hookToken
+            logger.error(message);
+            res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: message});
+        }
+    }).fail(function (err) {
+        //failed to find webhook details in the persistence layer
+        logger.error(getFullError(err));
+        res.status(HttpStatus.BAD_REQUEST).json({status: 'error', msg: 'Failed to get webhook details'});
+    });
+});
+
+//Validate webhook URL (optional)
 //Trello issues HEAD request to the Webhook URL during configuration in order to check URL validness
 //This method answers with empty HTTP-200, if the URL is valid
 router.head('/wh/:oauthToken/:hookToken', function (req, res) {
     var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
     db.get(req.params.hookToken).then(function (tokenDetails) {
         if (tokenDetails.node.value) {
-            logger.trace('TOKEN DETAILS: ' + JSON.stringify(tokenDetails.node.value));
-            var jsonValue = JSON.parse(tokenDetails.node.value);
-            var eType = jsonValue ? jsonValue.eventType : null;
-            var datasource = jsonValue ? jsonValue.datasource : null;
-            var tenantId = jsonValue.tenantId;
-            if (eType && tenantId && datasource) {
+            var jsonValue = validateTokenDetails(tokenDetails);
+            if (jsonValue) {
                 logger.debug('Webhook URL checked and found valid: ' + fullUrl);
                 res.status(HttpStatus.OK).send();
+            } else {
+                //webhook is found but its configuraion is invalid: empty datasource/tenantId/eType
+                var message = 'Webhook details are broken for '+ req.params.hookToken;
+                logger.error(message);
+                res.status(HttpStatus.INTERNAL_SERVER_ERROR).send()
             }
         } else {
+            //persistence layer has a reference (etcd key) but no data found (etcd value)
             logger.debug('Webhook URL checked and found INVALID due to invalid structure: ' + fullUrl);
-            res.status(HttpStatus.BAD_REQUEST).send();
+            res.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
         }
     }).fail(function (err) {
-        //failure due to token problems
+        //failed to find webhook details in the persistence layer
         logger.error(getFullError(err));
-        res.status(HttpStatus.BAD_REQUEST).json({status: 'error', msg: 'Invalid Webhook URL in use'});
+        res.status(HttpStatus.BAD_REQUEST).send();
     });
 });
 
+//Post webhook data
 router.post('/wh/:oauthToken/:hookToken', function (req, res) {
 
     /*    logger.debug('URL: ' + (req.protocol + '://' + req.get('Host') + req.originalUrl));
