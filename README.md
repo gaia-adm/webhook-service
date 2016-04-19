@@ -55,7 +55,6 @@ However it can bring some benefits, if we declare a list of event/datasources th
 
 **NOTE**: In addition, we can be ready to accept any other event/datasource combination but with no validations or predefined widgets.
 
-
 Known issues with webhooks:
 - CircleCI and DockerHub webhooks do not support per organization/user settings, webhook must be set individually for each project
 - DockerHub webhook stays in "pending" status forever in case of successful sending (https://github.com/docker/hub-feedback/issues/423)
