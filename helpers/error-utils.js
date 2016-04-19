@@ -11,7 +11,7 @@
 function getFullError(err) {
     var msg = err.stack ? err.stack : err ;
     //if stacktrace available
-    if(msg != err ) {
+    if(msg !== err ) {
         var curr = err;
         while (curr.cause && curr.cause()) {
             curr = curr.cause();

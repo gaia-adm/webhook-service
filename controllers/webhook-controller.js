@@ -83,6 +83,7 @@ function validateTokenDetails(tokenDetails) {
 //Get webhook configuration by hook token
 router.get('/wh/config/:hookToken', function(req, res){
     db.get(req.params.hookToken).then(function (tokenDetails) {
+        var message;
         if (tokenDetails.node.value) {
             var jsonValue = validateTokenDetails(tokenDetails);
             if(jsonValue){
@@ -90,13 +91,13 @@ router.get('/wh/config/:hookToken', function(req, res){
                 res.status(HttpStatus.OK).json(jsonValue);
             } else {
                 //webhook is found but its configuraion is invalid: empty datasource/tenantId/eType
-                var message = 'Webhook details are broken for '+ req.params.hookToken;
+                message = 'Webhook details are broken for '+ req.params.hookToken;
                 logger.error(message);
                 res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: message});
             }
         } else {
             //persistence layer has a reference (etcd key) but no data found (etcd value)
-            var message ='Webhook configuration is incorrect for '+ req.params.hookToken
+            message ='Webhook configuration is incorrect for '+ req.params.hookToken;
             logger.error(message);
             res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: message});
         }
@@ -122,7 +123,7 @@ router.head('/wh/:oauthToken/:hookToken', function (req, res) {
                 //webhook is found but its configuraion is invalid: empty datasource/tenantId/eType
                 var message = 'Webhook details are broken for '+ req.params.hookToken;
                 logger.error(message);
-                res.status(HttpStatus.INTERNAL_SERVER_ERROR).send()
+                res.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
             }
         } else {
             //persistence layer has a reference (etcd key) but no data found (etcd value)
