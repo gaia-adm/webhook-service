@@ -65,7 +65,7 @@ function validateTokenDetails(tokenDetails) {
     var jsonValue;
     try {
         jsonValue = JSON.parse(tokenDetails.node.value);
-    } catch(e){
+    } catch (e) {
         logger.error(getFullError(e));
         //logger.error('Failed to parse value for token ' + JSON.stringify(tokenDetails));
         return null;
@@ -81,23 +81,23 @@ function validateTokenDetails(tokenDetails) {
 }
 
 //Get webhook configuration by hook token
-router.get('/wh/config/:hookToken', function(req, res){
+router.get('/wh/config/:hookToken', function (req, res) {
     db.get(req.params.hookToken).then(function (tokenDetails) {
         var message;
         if (tokenDetails.node.value) {
             var jsonValue = validateTokenDetails(tokenDetails);
-            if(jsonValue){
+            if (jsonValue) {
                 logger.debug('Webhook ' + req.params.hookToken + ' is OK and will be returned');
                 res.status(HttpStatus.OK).json(jsonValue);
             } else {
                 //webhook is found but its configuraion is invalid: empty datasource/tenantId/eType
-                message = 'Webhook details are broken for '+ req.params.hookToken;
+                message = 'Webhook details are broken for ' + req.params.hookToken;
                 logger.error(message);
                 res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: message});
             }
         } else {
             //persistence layer has a reference (etcd key) but no data found (etcd value)
-            message ='Webhook configuration is incorrect for '+ req.params.hookToken;
+            message = 'Webhook configuration is incorrect for ' + req.params.hookToken;
             logger.error(message);
             res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: message});
         }
@@ -121,7 +121,7 @@ router.head('/wh/:oauthToken/:hookToken', function (req, res) {
                 res.status(HttpStatus.OK).send();
             } else {
                 //webhook is found but its configuraion is invalid: empty datasource/tenantId/eType
-                var message = 'Webhook details are broken for '+ req.params.hookToken;
+                var message = 'Webhook details are broken for ' + req.params.hookToken;
                 logger.error(message);
                 res.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
             }
@@ -153,7 +153,7 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
             var datasource = jsonValue ? jsonValue.datasource : null;
             var tenantId = jsonValue.tenantId;
             if (eType && tenantId && datasource) {
-                logger.debug('PUSHING DATA FOR TENANT: ' + tenantId + ',data source: ' +  datasource + ', data type: ' + eType);
+                logger.debug('PUSHING DATA FOR TENANT: ' + tenantId + ',data source: ' + datasource + ', data type: ' + eType);
                 var lineSeparator = '\n';
                 var wordSeparator = '.';
                 var routingKey = 'event' + wordSeparator + tenantId + wordSeparator + datasource + wordSeparator + eType;
@@ -186,3 +186,4 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
 });
 
 module.exports = router;
+module.exports.validateTokenDetails = validateTokenDetails;
