@@ -59,6 +59,20 @@ router.delete('/wh/config/:hookToken', function (req, res) {
 
 });
 
+//When all webhooks details requested, return only those that owned by tenant that sent the request
+function filterWebhooksByTenantId(data, tenantId) {
+    var result = [];
+    if (data.constructor === Array) {
+        for (var i = 0; i < data.length; i++) {
+            var parsed = JSON.parse(data[i].value);
+            //''+number seems to be the faster option; see http://stackoverflow.com/questions/5765398/whats-the-best-way-to-convert-a-number-to-a-string-in-javascript
+            if (''+parsed.tenantId === tenantId) {
+                result.push(parsed);
+            }
+        }
+    }
+    return result;
+}
 
 function validateTokenDetails(tokenDetails) {
     logger.trace('TOKEN DETAILS: ' + JSON.stringify(tokenDetails.node.value));
@@ -106,6 +120,28 @@ router.get('/wh/config/:hookToken', function (req, res) {
         logger.error(getFullError(err));
         res.status(HttpStatus.BAD_REQUEST).json({status: 'error', msg: 'Failed to get webhook details'});
     });
+});
+
+//Get webhook configurations for the provided tenantId
+router.get('/wh/config', function (req, res) {
+    var tenantId = req.header('tenantId');
+    if (!tenantId) {
+        res.status(HttpStatus.UNAUTHORIZED).json({status: 'error', msg: 'Cannot authenticate'});
+    } else {
+        db.getAll().then(function (data, err) {
+            if (err) {
+                console.log(err);
+                res.status(HttpStatus.NOT_FOUND).send();
+            } else {
+                console.log(data);
+                Q.fcall(filterWebhooksByTenantId, data, tenantId).then(function (result) {
+                    res.status(HttpStatus.OK).json(result);
+                });
+
+            }
+        });
+
+    }
 });
 
 //Validate webhook URL (optional)
@@ -187,3 +223,4 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
 
 module.exports = router;
 module.exports.validateTokenDetails = validateTokenDetails;
+module.exports.filterByTenant = filterWebhooksByTenantId;

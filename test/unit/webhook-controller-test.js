@@ -71,4 +71,48 @@ describe('#webhook-unit-test', function () {
             chai.assert.equal(whc.validateTokenDetails(token), null, 'Should be null:');
         });
     });
+
+    describe("#filterWebhooks-Owned", function () {
+        var tenantId = "9603590870";
+        var data = {
+            "action": "get",
+            "node": {
+                "key": "/webhooks",
+                "dir": true,
+                "nodes": [{
+                    "key": "/webhooks/78a184cc05756f1657f3e778db2e0c8963596e80",
+                    "value": "{\"datasource\":\"github\",\"eventType\":\"push\",\"createdAt\":1461145170798,\"apiToken\":\"0bcfb685-ee7d-4d66-bbbf-73966d2326a4\",\"tenantId\":9603590870,\"token\":\"78a184cc05756f1657f3e778db2e0c8963596e80\",\"hookUrl\":\"https://localhost:3000/wh/0bcfb685-ee7d-4d66-bbbf-73966d2326a4/78a184cc05756f1657f3e778db2e0c8963596e80\"}",
+                    "modifiedIndex": 26723,
+                    "createdIndex": 26723
+                }],
+                "modifiedIndex": 26723,
+                "createdIndex": 26723
+            }
+        };
+        var result = whc.filterByTenant(data.node.nodes, tenantId);
+        chai.assert.isTrue(result.constructor===Array);
+        chai.assert.equal(result.length, 1, 'webhook should belong to the tenant provided');
+    });
+
+    describe("#filterWebhooks-NotOwned", function () {
+        var tenantId = "9603590870";
+        var data = {
+            "action": "get",
+            "node": {
+                "key": "/webhooks",
+                "dir": true,
+                "nodes": [{
+                    "key": "/webhooks/78a184cc05756f1657f3e778db2e0c8963596e80",
+                    "value": "{\"datasource\":\"github\",\"eventType\":\"push\",\"createdAt\":1461145170798,\"apiToken\":\"0bcfb685-ee7d-4d66-bbbf-73966d2326a4\",\"tenantId\":1111111111,\"token\":\"78a184cc05756f1657f3e778db2e0c8963596e80\",\"hookUrl\":\"https://localhost:3000/wh/0bcfb685-ee7d-4d66-bbbf-73966d2326a4/78a184cc05756f1657f3e778db2e0c8963596e80\"}",
+                    "modifiedIndex": 26723,
+                    "createdIndex": 26723
+                }],
+                "modifiedIndex": 26723,
+                "createdIndex": 26723
+            }
+        };
+        var result = whc.filterByTenant(data.node.nodes, tenantId);
+        chai.assert.isTrue(result.constructor===Array);
+        chai.assert.equal(result.length, 0, 'webhook should not belong to the tenant provided');
+    });
 });
