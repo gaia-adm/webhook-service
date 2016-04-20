@@ -1,4 +1,4 @@
-FROM gaiaadm/nodejs:0.12.6
+FROM gaiaadm/nodejs:4.4.3
 
 # Set the working directory
 WORKDIR /src
