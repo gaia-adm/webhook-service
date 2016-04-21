@@ -197,7 +197,7 @@ describe('notification tests', function () {
     });
 
     it('#send notification must succeed', function () {
-        return notification.sendToEnricher(routingKey, eventContent).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
+        return notification.sendToEnricher(routingKey, JSON.stringify(eventContent)).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
         }, function (err) {
             assert.fail(true, false, 'problem: ' + err.message);
         }).fail(function (error) {

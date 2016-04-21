@@ -5,14 +5,14 @@ var chai = require('chai');
 var expect = chai.expect;
 
 var eventHeaders = {
-    'Request URL': 'https://circleci.com/hooks/github',
-    'Request method': 'POST',
-    'content-type': 'application/json',
-    'Expect': 'User-Agent: GitHub-Hookshot/f671e41',
-    'X-GitHub-Delivery': '741e6b80-9f32-11e5-8f65-521db3377f06',
-    'X-GitHub-Event': 'push',
-    'X-Hub-Signature': 'sha1=8eb2fc22c38d33fc3869e192b11666f20bcdec55'
-};
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Expect': '',
+    'User-Agent': 'GitHub-Hookshot/cd33156',
+    'X-GitHub-Delivery': '32c68400-078e-11e6-97e2-99ef6a87688f',
+    'X-GitHub-Event': 'push'
+}
+
 var eventContent = {
     "ref": "refs/heads/master",
     "before": "bd5c21118340b74aa2531aeae8648f217562086d",
@@ -279,11 +279,15 @@ describe('webhook tests', function () {
             });
         });
 
-        it('# validate url', function(done) {
+        it('# validate url', function (done) {
             var options = {
                 url: 'http://localhost:3000/wh/' + accessToken + '/' + webHookToken,
-                headers: eventHeaders
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
             };
+            console.log('OPTIONS: ' + JSON.stringify(options));
             request.head(options, function (err, res) {
                 expect(res.statusCode).to.equal(200);
                 done();
@@ -297,6 +301,7 @@ describe('webhook tests', function () {
                 headers: eventHeaders,
                 json: eventContent
             };
+            console.log('OPTIONS: ' + JSON.stringify(options));
             request.post(options, function (err, res, body) {
                 expect(res.statusCode).to.equal(204);
                 done();
@@ -311,6 +316,7 @@ describe('webhook tests', function () {
                 headers: eventHeaders,
                 json: eventContent
             };
+            console.log('OPTIONS: ' + JSON.stringify(options));
             request.post(options, function (err, res, body) {
                 expect(res.statusCode).to.equal(400);
                 done();
