@@ -21,12 +21,12 @@ test:
     - docker run -d --name etcd microbox/etcd:2.1.1 -name etcd --listen-client-urls 'http://0.0.0.0:4001' --advertise-client-urls 'http://0.0.0.0:4001'; sleep 5
     - docker run -d -u jetty --link etcd:etcd -e etcdUrl="http://etcd:4001" -e noDex=true --name sts gaiaadm/sts; sleep 10
     # run jshint
-    - docker run --name jshint-runner gaiaadm/whs  /src/node_modules/grunt/bin/grunt jshint -v
+    - docker run --name jshint-runner gaiaadm/whs  grunt jshint -v
     # run unit tests
-    - docker run --name unit-test-runner gaiaadm/whs  /src/node_modules/grunt/bin/grunt unit -v
+    - docker run --name unit-test-runner gaiaadm/whs  grunt unit -v
     - docker cp unit-test-runner:/src/unit-test-results.xml $CIRCLE_TEST_REPORTS
     # run integration tests
-    - docker run  --name integration-test-runner --link rabbitmq:rabbitmq --link sts:sts --link etcd:etcd -e AMQ_USER="admin" -e AMQ_PASSWORD="admin" -e AMQ_SERVER="rabbitmq:5672" -e ETCD_SERVER="etcd:4001" -e AUTH_SERVER="sts:8080"  -p 3210:3000  -e LOG_LEVEL="DEBUG"  gaiaadm/whs  /src/node_modules/grunt/bin/grunt integration -v
+    - docker run  --name integration-test-runner --link rabbitmq:rabbitmq --link sts:sts --link etcd:etcd -e AMQ_USER="admin" -e AMQ_PASSWORD="admin" -e AMQ_SERVER="rabbitmq:5672" -e ETCD_SERVER="etcd:4001" -e AUTH_SERVER="sts:8080"  -p 3210:3000  -e LOG_LEVEL="DEBUG"  gaiaadm/whs  grunt integration -v
     - docker cp integration-test-runner:/src/integration-test-results.xml $CIRCLE_TEST_REPORTS
 deployment:
   continuous:
