@@ -88,7 +88,7 @@ router.delete('/wh/config/:hookToken', function (req, res) {
 //When all webhooks details requested, return only those that owned by tenant that sent the request
 function filterWebhooksByTenantId(data, tenantId) {
     var result = [];
-    if (data.constructor === Array) {
+    if (data && data.constructor === Array) {
         logger.trace('Total webhooks defined for all tenants: ' + data.length);
         for (var i = 0; i < data.length; i++) {
             var parsed = JSON.parse(data[i].value);
