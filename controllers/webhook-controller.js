@@ -29,23 +29,49 @@ router.post('/wh/config', function (req, res) {
     var eventType = req.body.event;
     var currentTime = Date.now();
 
-    logger.info('Creating webhook for ' + datasource + ' and event type ' + eventType);
-
-    respBody.datasource = datasource;
-    respBody.eventType = eventType;
-    respBody.createdAt = currentTime;
-    respBody.apiToken = req.oauth.bearerToken.accessToken;
-    respBody.tenantId = req.oauth.bearerToken.tenantId;
-    respBody.token = crypto.createSHA1(datasource, eventType, respBody.tenantId, currentTime);
-    respBody.hookUrl = 'https://' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+    logger.info('Checking, if the webhook already exists and should be updated or this is a new one and should be created');
 
 
-    Q.fcall(db.add, respBody.token, JSON.stringify(respBody)).then(function () {
-        res.status(HttpStatus.OK).json(respBody);
-    }).fail(function (err) {
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: err.message});
+    Q.fcall(function () {
+        return db.getAll();
+    }).then(function (data) {
+        Q.fcall(function () {
+            return filterWebhooksByTenantId(data, req.oauth.bearerToken.tenantId);
+        }).then(function (data3) {
+            for (var i = 0; i < data3.length; i++) {
+                if (data3[i].datasource === datasource && data3[i].eventType === eventType) {
+                    return data3[i];
+                }
+            }
+            return null;
+        }).then(function (data4) {
+            if (data4) {
+                logger.trace('Requested webhook already exists, editing...');
+                respBody.datasource = data4.datasource;
+                respBody.eventType = data4.eventType;
+                respBody.createdAt = data4.currentTime;
+                respBody.apiToken = req.oauth.bearerToken.accessToken;
+                respBody.tenantId = req.oauth.bearerToken.tenantId;
+                respBody.token = data4.token;
+                respBody.hookUrl = 'https://' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                //   res.status(HttpStatus.OK).json({result: data4.key});
+            } else {
+                logger.trace('Creating webhook for tenant ' + req.oauth.bearerToken.tenantId);
+                respBody.datasource = datasource;
+                respBody.eventType = eventType;
+                respBody.createdAt = currentTime;
+                respBody.apiToken = req.oauth.bearerToken.accessToken;
+                respBody.tenantId = req.oauth.bearerToken.tenantId;
+                respBody.token = crypto.createSHA1(datasource, eventType, respBody.tenantId, currentTime);
+                respBody.hookUrl = 'https://' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+            }
+            Q.fcall(db.add, respBody.token, JSON.stringify(respBody)).then(function () {
+                res.status(HttpStatus.OK).json(respBody);
+            }).fail(function (err) {
+                res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: err.message});
+            });
+        });
     });
-
 });
 
 //Delete webhook configuration
@@ -63,14 +89,15 @@ router.delete('/wh/config/:hookToken', function (req, res) {
 function filterWebhooksByTenantId(data, tenantId) {
     var result = [];
     if (data.constructor === Array) {
+        logger.trace('Total webhooks defined for all tenants: ' + data.length);
         for (var i = 0; i < data.length; i++) {
             var parsed = JSON.parse(data[i].value);
-            //''+number seems to be the faster option; see http://stackoverflow.com/questions/5765398/whats-the-best-way-to-convert-a-number-to-a-string-in-javascript
-            if (''+parsed.tenantId === tenantId) {
+            if ('' + parsed.tenantId === '' + tenantId) {
                 result.push(parsed);
             }
         }
     }
+    logger.trace('Webhooks defined for tenant ' + tenantId + ': ' + result.length);
     return result;
 }
 
@@ -124,16 +151,16 @@ router.get('/wh/config/:hookToken', function (req, res) {
 
 //Get webhook configurations for the provided tenantId
 router.get('/wh/config', function (req, res) {
-    var tenantId = req.header('tenantId');
+    var tenantId = req.oauth.bearerToken.tenantId;
     if (!tenantId) {
         res.status(HttpStatus.UNAUTHORIZED).json({status: 'error', msg: 'Cannot authenticate'});
     } else {
         db.getAll().then(function (data, err) {
             if (err) {
-                console.log(err);
+                logger.error(err);
                 res.status(HttpStatus.NOT_FOUND).send();
             } else {
-                console.log(data);
+                logger.trace(data);
                 Q.fcall(filterWebhooksByTenantId, data, tenantId).then(function (result) {
                     res.status(HttpStatus.OK).json(result);
                 });
@@ -175,12 +202,6 @@ router.head('/wh/:oauthToken/:hookToken', function (req, res) {
 
 //Post webhook data
 router.post('/wh/:oauthToken/:hookToken', function (req, res) {
-
-    /*    logger.debug('URL: ' + (req.protocol + '://' + req.get('Host') + req.originalUrl));
-     logger.debug('Hook Token: ' + req.params.hookToken);
-     logger.debug('HEADERS: ' + JSON.stringify(req.headers));
-     logger.debug(JSON.stringify(req.body));*/
-
     db.get(req.params.hookToken).then(function (tokenDetails) {
         if (tokenDetails.node.value) {
             logger.trace('TOKEN DETAILS: ' + JSON.stringify(tokenDetails.node.value));
