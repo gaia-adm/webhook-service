@@ -36,9 +36,18 @@ function initEtcd() {
             logger.log('CRITICAL', 'persistence-controller', 'Etcd is not configured properly');
             reject(new Error('Etcd is not configured properly'));
         } else {
-            etcd.version(function (err) {
+            etcd.get(BASE_PATH, function(err){
                 if (err) {
-                    reject(new Error('Error accessing Etcd on ' + etcdParams.hostname + ':' + etcdParams.port));
+                    logger.warn('Checked the existence of ', BASE_PATH, ' directory and the result is: ', err);
+                    etcd.mkdir(BASE_PATH, function (err) {
+                        if (err) {
+                            logger.error(BASE_PATH, ' folder does not exist and cannot create it', err);
+                            reject(new Error('Error accessing Etcd on ' + etcdParams.hostname + ':' + etcdParams.port));
+                        } else {
+                            logger.log('INFO', 'persistence-controller', 'Cannot connect ' + BASE_PATH + ' folder on ' + etcdParams.hostname + ':' + etcdParams.port);
+                            resolve();
+                        }
+                    });
                 } else {
                     logger.log('INFO', 'persistence-controller', 'Connected to Etcd on ' + etcdParams.hostname + ':' + etcdParams.port);
                     resolve();
