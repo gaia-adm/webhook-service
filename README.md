@@ -59,5 +59,3 @@ Known issues with webhooks:
 - CircleCI and DockerHub webhooks do not support per organization/user settings, webhook must be set individually for each project
 - DockerHub webhook stays in "pending" status forever in case of successful sending (https://github.com/docker/hub-feedback/issues/423)
 - Self-signed certificate for https Webhook URL is supported by GitHub, not supported by DockerHub, Trello
-
-
