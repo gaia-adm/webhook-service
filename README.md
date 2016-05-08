@@ -18,10 +18,11 @@ POST: https://webhook.mydomain.gaiahub.io/wh/config
       "event": "push",
       "tsField": "commits[*].timestamp"}
 ```
-NOTE: tsField is optional and defines the field of the webhook that contains the timestamp we want use.
-If tsField is not provided when updating the existing webhook, no update on this field. Sending explicitly the empty string as tsField, nullify this field
-**Response**:
-HTTP-200
+NOTES:
+  - The same API creates the new webhook configuration or updates the existing one, if webhook already exists in the tenant for datasource and event provided
+  - tsField is optional and defines the field of the webhook that contains the timestamp we want use. If tsField is not provided when updating the existing webhook, no update on this field. Sending explicitly the empty string as tsField, nullify this field
+
+**Response**: HTTP-200
 ```
     {
         "datasource": "github",
