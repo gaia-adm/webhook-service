@@ -32,8 +32,16 @@ router.post('/wh/config', function (req, res) {
 
     logger.info('Checking, if the webhook already exists and should be updated or this is a new one and should be created');
 
-
     Q.fcall(function () {
+        //validate input
+        if (!datasource || !eventType) {
+            logger.error('Invalid input for POST request of tenant ' + req.oauth.bearerToken.tenantId + '; datasource: ' + datasource + ', event: ' + eventType);
+            res.status(HttpStatus.BAD_REQUEST).json({
+                status: 'error',
+                msg: 'Bad request: both datasource and event must be provided'
+            });
+        }
+    }).then(function () {
         return db.getAll();
     }).then(function (data) {
         Q.fcall(function () {
@@ -55,10 +63,10 @@ router.post('/wh/config', function (req, res) {
                 respBody.tenantId = req.oauth.bearerToken.tenantId;
                 respBody.token = data4.token;
                 respBody.hookUrl = 'https://' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
-                if(typeof timestampField === 'undefined' || timestampField === null){
+                if (typeof timestampField === 'undefined' || timestampField === null) {
                     //if no timestampField or sent null, continue using the existing one
                     respBody.tsField = data4.tsField;
-                } else if(timestampField.length===0) {
+                } else if (timestampField.length === 0) {
                     //if timestampField is set to empty string explicitly, we remove it
                     delete respBody.tsField;
                 } else {
@@ -71,14 +79,14 @@ router.post('/wh/config', function (req, res) {
                 logger.trace('Creating webhook for tenant ' + req.oauth.bearerToken.tenantId);
                 respBody.datasource = datasource;
                 respBody.eventType = eventType;
-                if(timestampField) {
+                if (timestampField) {
                     respBody.tsField = timestampField;
                 }
                 respBody.createdAt = currentTime;
                 respBody.apiToken = req.oauth.bearerToken.accessToken;
                 respBody.tenantId = req.oauth.bearerToken.tenantId;
                 respBody.token = crypto.createSHA1(datasource, eventType, respBody.tenantId, currentTime);
-                respBody.hookUrl = 'https://' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                respBody.hookUrl = 'https://webhook.' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
             }
             Q.fcall(db.add, respBody.token, JSON.stringify(respBody)).then(function () {
                 res.status(HttpStatus.OK).json(respBody);

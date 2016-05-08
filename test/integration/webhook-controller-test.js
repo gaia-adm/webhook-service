@@ -255,6 +255,26 @@ describe('webhook tests', function () {
             });
         });
 
+        it('# generate invalid web hook - event field is missing', function (done) {
+
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                json: {
+                    'datasource': 'github'
+                }
+            };
+
+            request.post(options, function (err, res, body) {
+                expect(res.statusCode).to.equal(400);
+                done();
+            });
+        });
+
         it('# generate web hook', function (done) {
 
             var options = {
@@ -273,11 +293,12 @@ describe('webhook tests', function () {
             request.post(options, function (err, res, body) {
                 expect(res.statusCode).to.equal(200);
                 webHookToken = body.token;
-                expect(body.hookUrl).to.equal('https://localhost:3000/wh/' + accessToken + '/' + webHookToken);
+                //returned URL is aligned for proxied environment
+                expect(body.hookUrl).to.equal('https://webhook.localhost:3000/wh/' + accessToken + '/' + webHookToken);
                 expect(body.tenantId).to.equal(tenantId);
                 expect(body.datasource).to.equal('github');
                 expect(body.eventType).to.equal('push');
-                initialWebhookUrl = body.hookUrl;
+                initialWebhookUrl = 'https://localhost:3000/wh/' + accessToken + '/' + webHookToken;
                 initialDatasource = body.datasource;
                 initialEventType = body.eventType;
                 done();
