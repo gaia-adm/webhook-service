@@ -27,6 +27,7 @@ router.post('/wh/config', function (req, res) {
     var respBody = {};
     var datasource = req.body.datasource;
     var eventType = req.body.event;
+    var timestampField = req.body.tsField;
     var currentTime = Date.now();
 
     logger.info('Checking, if the webhook already exists and should be updated or this is a new one and should be created');
@@ -49,16 +50,30 @@ router.post('/wh/config', function (req, res) {
                 logger.trace('Requested webhook already exists, editing...');
                 respBody.datasource = data4.datasource;
                 respBody.eventType = data4.eventType;
-                respBody.createdAt = data4.currentTime;
+                respBody.createdAt = data4.createdAt;
                 respBody.apiToken = req.oauth.bearerToken.accessToken;
                 respBody.tenantId = req.oauth.bearerToken.tenantId;
                 respBody.token = data4.token;
                 respBody.hookUrl = 'https://' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                if(typeof timestampField === 'undefined' || timestampField === null){
+                    //if no timestampField or sent null, continue using the existing one
+                    respBody.tsField = data4.tsField;
+                } else if(timestampField.length===0) {
+                    //if timestampField is set to empty string explicitly, we remove it
+                    delete respBody.tsField;
+                } else {
+                    //if timestampField provided, using it
+                    //NOTE: if empty string provided as a value, tsField will be reset (removed) from the configuration
+                    respBody.tsField = timestampField;
+                }
                 //   res.status(HttpStatus.OK).json({result: data4.key});
             } else {
                 logger.trace('Creating webhook for tenant ' + req.oauth.bearerToken.tenantId);
                 respBody.datasource = datasource;
                 respBody.eventType = eventType;
+                if(timestampField) {
+                    respBody.tsField = timestampField;
+                }
                 respBody.createdAt = currentTime;
                 respBody.apiToken = req.oauth.bearerToken.accessToken;
                 respBody.tenantId = req.oauth.bearerToken.tenantId;

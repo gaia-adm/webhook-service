@@ -181,6 +181,8 @@ describe('webhook tests', function () {
         var adminName = Date.now();
         var clientId = adminName;
         var tenantId, accessToken, webHookToken;
+        var initialWebhookUrl, initialDatasource, initialEventType;
+        var githubTimestampField='commits[*].timestamp';
 
         it('# create tenant', function (done) {
             var options = {
@@ -275,6 +277,9 @@ describe('webhook tests', function () {
                 expect(body.tenantId).to.equal(tenantId);
                 expect(body.datasource).to.equal('github');
                 expect(body.eventType).to.equal('push');
+                initialWebhookUrl = body.hookUrl;
+                initialDatasource = body.datasource;
+                initialEventType = body.eventType;
                 done();
             });
         });
@@ -323,7 +328,90 @@ describe('webhook tests', function () {
             });
             var end = Date.now();
             console.log('Duration: ' + (end - start));
-        })
+        });
+
+        //when update the existing WH configuration, the only thing that can change is a timestamp field definiton
+        it("# add timestamp field to the webhook definition", function(done){
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                json: {
+                    'datasource': 'github',
+                    'event': 'push',
+                    'tsField': githubTimestampField
+                }
+            };
+
+            request.post(options, function (err, res, body) {
+                expect(res.statusCode).to.equal(200);
+                webHookToken = body.token;
+                expect(body.hookUrl).to.equal(initialWebhookUrl);
+                expect(body.tenantId).to.equal(tenantId);
+                expect(body.datasource).to.equal(initialDatasource);
+                expect(body.eventType).to.equal(initialEventType);
+                expect(body.tsField).to.equal(githubTimestampField);
+                done();
+            });
+        });
+
+        //when tsField is not provided on update, we continue use the existing one
+        it("# keep using the existing timestamp field on update", function(done){
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                json: {
+                    'datasource': 'github',
+                    'event': 'push'
+                }
+            };
+
+            request.post(options, function (err, res, body) {
+                expect(res.statusCode).to.equal(200);
+                webHookToken = body.token;
+                expect(body.hookUrl).to.equal(initialWebhookUrl);
+                expect(body.tenantId).to.equal(tenantId);
+                expect(body.datasource).to.equal(initialDatasource);
+                expect(body.eventType).to.equal(initialEventType);
+                expect(body.tsField).to.equal(githubTimestampField);
+                done();
+            });
+        });
+
+        //when tsField is provided on update, and set to empty string explicitly we continue use the existing one
+        it("# keep using the existing timestamp field on update", function(done){
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                json: {
+                    'datasource': 'github',
+                    'event': 'push',
+                    'tsField': ''
+                }
+            };
+
+            request.post(options, function (err, res, body) {
+                expect(res.statusCode).to.equal(200);
+                webHookToken = body.token;
+                expect(body.hookUrl).to.equal(initialWebhookUrl);
+                expect(body.tenantId).to.equal(tenantId);
+                expect(body.datasource).to.equal(initialDatasource);
+                expect(body.eventType).to.equal(initialEventType);
+                expect(body.tsField).to.empty;
+                done();
+            });
+        });
 
     });
 
