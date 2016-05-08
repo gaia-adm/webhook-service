@@ -33,13 +33,23 @@ module.exports = function (grunt) {
                     clearRequireCache: false
                 }, src: ['test/integration/**/*-test.js']
             }
+        },
+        mocha_istanbul: {
+            coverage: {
+                src: ['test/unit','test/integration'], // a folder works nicely
+                options: {
+                    mask: '*-test.js'
+                },
+                reportFormats: ['cobertura','lcovonly']
+            }
         }
     });
 
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-mocha-test');
+    grunt.loadNpmTasks('grunt-mocha-istanbul');
 
     grunt.registerTask('unit', 'mochaTest:unit');
     grunt.registerTask('integration', 'mochaTest:integration');
-    //grunt.registerTask('default', 'mochaTest:unittest');  //align with result-processing format - no default task
+    grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
 };
