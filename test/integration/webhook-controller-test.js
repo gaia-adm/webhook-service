@@ -182,7 +182,7 @@ describe('webhook tests', function () {
         var clientId = adminName;
         var tenantId, accessToken, webHookToken;
         var initialWebhookUrl, initialDatasource, initialEventType;
-        var githubTimestampField='commits[*].timestamp';
+        var githubTimestampField = 'commits[*].timestamp';
 
         it('# create tenant', function (done) {
             var options = {
@@ -352,7 +352,7 @@ describe('webhook tests', function () {
         });
 
         //when update the existing WH configuration, the only thing that can change is a timestamp field definiton
-        it("# add timestamp field to the webhook definition", function(done){
+        it("# add timestamp field to the webhook definition", function (done) {
             var options = {
                 url: 'http://localhost:3000/wh/config',
                 headers: {
@@ -380,7 +380,7 @@ describe('webhook tests', function () {
         });
 
         //when tsField is not provided on update, we continue use the existing one
-        it("# keep using the existing timestamp field on update", function(done){
+        it("# keep using the existing timestamp field on update", function (done) {
             var options = {
                 url: 'http://localhost:3000/wh/config',
                 headers: {
@@ -407,7 +407,7 @@ describe('webhook tests', function () {
         });
 
         //when tsField is provided on update, and set to empty string explicitly we continue use the existing one
-        it("# keep using the existing timestamp field on update", function(done){
+        it("# keep using the existing timestamp field on update", function (done) {
             var options = {
                 url: 'http://localhost:3000/wh/config',
                 headers: {
@@ -430,6 +430,70 @@ describe('webhook tests', function () {
                 expect(body.datasource).to.equal(initialDatasource);
                 expect(body.eventType).to.equal(initialEventType);
                 expect(body.tsField).to.empty;
+                done();
+            });
+        });
+
+        //get all webhooks configured for the tenant
+        it("# list webhooks", function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            };
+
+            request.get(options, function (err, res) {
+                expect(res.statusCode).to.equal(200);
+                console.log(res.body);
+                var parsed = JSON.parse(res.body);
+                expect(parsed[0].hookUrl).to.equal(initialWebhookUrl);
+                expect(parsed[0].tenantId).to.equal(tenantId);
+                expect(parsed[0].datasource).to.equal(initialDatasource);
+                expect(parsed[0].eventType).to.equal(initialEventType);
+                expect(parsed[0].tsField).to.empty;
+                done();
+            });
+        });
+
+        //get webhook details configured for the tenant
+        it("# get webhook details", function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/config/'+webHookToken,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            };
+
+            request.get(options, function (err, res) {
+                expect(res.statusCode).to.equal(200);
+                var parsed = JSON.parse(res.body);
+                expect(parsed.hookUrl).to.equal(initialWebhookUrl);
+                expect(parsed.tenantId).to.equal(tenantId);
+                expect(parsed.datasource).to.equal(initialDatasource);
+                expect(parsed.eventType).to.equal(initialEventType);
+                expect(parsed.tsField).to.empty;
+                done();
+            });
+        });
+
+        //get webhook by token(?) configured for the tenant
+        it("# delete webhook", function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/config/'+webHookToken,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            };
+
+            request.delete(options, function (err, res) {
+                expect(res.statusCode).to.equal(204);
                 done();
             });
         });

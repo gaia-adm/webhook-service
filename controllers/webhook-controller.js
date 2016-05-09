@@ -38,7 +38,14 @@ router.post('/wh/config', function (req, res) {
             logger.error('Invalid input for POST request of tenant ' + req.oauth.bearerToken.tenantId + '; datasource: ' + datasource + ', event: ' + eventType);
             res.status(HttpStatus.BAD_REQUEST).json({
                 status: 'error',
-                msg: 'Bad request: both datasource and event must be provided'
+                msg: 'Bad request: datasource'
+            });
+        }
+        if (!eventType) {
+            logger.error('Invalid input for POST request of tenant ' + req.oauth.bearerToken.tenantId + '; datasource: ' + datasource + ', event: ' + eventType);
+            res.status(HttpStatus.BAD_REQUEST).json({
+                status: 'error',
+                msg: 'Bad request: event must be provided'
             });
         }
     }).then(function () {
