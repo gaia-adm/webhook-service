@@ -31,6 +31,7 @@ test:
     # run coverage
     - docker run  --name coverage-runner --link rabbitmq:rabbitmq --link sts:sts --link etcd:etcd -e AMQ_USER="admin" -e AMQ_PASSWORD="admin" -e AMQ_SERVER="rabbitmq:5672" -e ETCD_SERVER="etcd:4001" -e AUTH_SERVER="sts:8080"  -p 3210:3000  -e LOG_LEVEL="DEBUG"  gaiaadm/whs  grunt coverage -v
     - docker cp coverage-runner:/src/coverage/ $CIRCLE_TEST_REPORTS
+    - docker cp coverage-runner:/src/coverage/lcov.info $CIRCLE_TEST_REPORTS
   post:
     - bash <(curl -s https://codecov.io/bash)
 deployment:
