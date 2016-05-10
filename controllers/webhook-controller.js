@@ -239,13 +239,16 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
             var eType = jsonValue ? jsonValue.eventType : null;
             var datasource = jsonValue ? jsonValue.datasource : null;
             var tenantId = jsonValue.tenantId;
+            var hookHeaders = {};
+            hookHeaders.tsField = jsonValue ? jsonValue.tsField : null;
             if (eType && tenantId && datasource) {
                 logger.debug('PUSHING DATA FOR TENANT: ' + tenantId + ',data source: ' + datasource + ', data type: ' + eType);
                 var lineSeparator = '\n';
                 var wordSeparator = '.';
                 var routingKey = 'event' + wordSeparator + tenantId + wordSeparator + datasource + wordSeparator + eType;
                 var content = JSON.stringify(req.body);
-                amqp.sendToEnricher(routingKey, content).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
+
+                amqp.sendToEnricher(routingKey, content, hookHeaders).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
                     logger.trace('Successfully sent to RabbitMQ: ' + JSON.stringify(req.body) + lineSeparator);
                     res.status(HttpStatus.NO_CONTENT).send();
                 }, function (err) {

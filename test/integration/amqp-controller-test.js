@@ -197,7 +197,20 @@ describe('notification tests', function () {
     });
 
     it('#send notification must succeed', function () {
-        return notification.sendToEnricher(routingKey, JSON.stringify(eventContent)).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
+        var headers = {};
+        headers.tsField="commits[*].timestamp";
+        return notification.sendToEnricher(routingKey, JSON.stringify(eventContent),headers).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
+        }, function (err) {
+            assert.fail(true, false, 'problem: ' + err.message);
+        }).fail(function (error) {
+            assert.fail(error, null, error.message);
+        });
+    });
+
+    it('#send notification empty header must succeed', function () {
+        var headers = {};
+        headers.tsField="commits[*].timestamp";
+        return notification.sendToEnricher(routingKey, JSON.stringify(eventContent),headers).timeout(RABBIT_TIMEOUT_MSEC).then(function () {
         }, function (err) {
             assert.fail(true, false, 'problem: ' + err.message);
         }).fail(function (error) {
