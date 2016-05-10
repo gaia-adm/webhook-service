@@ -10,13 +10,19 @@ Service for generating webhook tokens and accepting webhooks data
 ### Generating webhook:
 **Request**
 ```
-POST: https://mydomain.gaiahub.io:444/wh/config
-    Content-Type, Accept: application/json
+POST: https://webhook.mydomain.gaiahub.io/wh/config
+    Content-Type: application/json
+    Accept: application/json
     Authorization: Bearer <accesstoken>
     { "datasource":"github",
-      "event": "push"}
+      "event": "push",
+      "tsField": "commits[*].timestamp"}
 ```
-**Response**:
+NOTES:
+  - The same API creates the new webhook configuration or updates the existing one, if webhook already exists in the tenant for datasource and event provided
+  - tsField is optional and defines the field of the webhook that contains the timestamp we want use. If tsField is not provided when updating the existing webhook, no update on this field. Sending explicitly the empty string as tsField, nullify this field
+
+**Response**: HTTP-200
 ```
     {
         "datasource": "github",
@@ -25,13 +31,55 @@ POST: https://mydomain.gaiahub.io:444/wh/config
         "apiToken": "f0cf847f-0bf4-4777-9a28-59b7a4b48309",
         "tenantId": 5618780000,
         "token": "7a8b7747fb02189cee0a3e62d0e717460923d945",
-        "hookUrl": "https://mydomain.gaiahub.io:444/wh/f0cf847f-0bf4-4777-9a28-59b7a4b48309/7a8b7747fb02189cee0a3e62d0e717460923d945"
+        "tsField": "commits[*].timestamp",
+        "hookUrl": "https://webhook.mydomain.gaiahub.io/wh/f0cf847f-0bf4-4777-9a28-59b7a4b48309/7a8b7747fb02189cee0a3e62d0e717460923d945"
     }
 ```
 
 ### Pushing data
 Add the hookUrl (see above) to webhooks configuration
 NOTE: Meanwhile there is no restriction of using webhook generated for certain eventType/datasource with different eventType/datasource so use carefully.
+
+### Other APIs:
+**Get webhook details**:
+```
+GET: https://webhook.mydomain.gaiahub.io/wh/config/webhook-token
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Bearer <accesstoken>
+```
+**Response**:
+HTTP-200 (webhooks details - the same as for webhook creation)
+
+**Get details for all webhooks defined for the tenant**:
+```
+GET: https://webhook.mydomain.gaiahub.io/wh/config
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Bearer <accesstoken>
+```
+**Response**:
+HTTP-200 (list of webhooks details - the same as for webhook creation)
+
+**Delete webhook configuration**:
+```
+DELETE: https://webhook.mydomain.gaiahub.io/wh/config/webhook-token
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Bearer <accesstoken>
+```
+**Response**:
+HTTP-204
+
+**Webhook validation**:
+```
+HEAD: https://webhook.mydomain.gaiahub.io/wh/config/webhook-token
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Bearer <accesstoken>
+```
+**Response**:
+HTTP-200 (empty)
 
 ### Flow
 When webhook data received, the API token and Webhook token are validated.
@@ -54,7 +102,6 @@ However it can bring some benefits, if we declare a list of event/datasources th
     - [TravisCI] (https://docs.travis-ci.com/user/notifications/#Webhook-notification)
 
 **NOTE**: In addition, we can be ready to accept any other event/datasource combination but with no validations or predefined widgets.
-
 
 Known issues with webhooks:
 - CircleCI and DockerHub webhooks do not support per organization/user settings, webhook must be set individually for each project

@@ -206,9 +206,10 @@ function closeChannel() {
  * Sends webhook data to events-to-enrich exchange
  * @param routingKey: RabbitMQ routingKey. Need to be in the format of: "event.TENANT_ID.DATA_SOURCE.DATA_TYPE"
  * @param content: webhook event content
+ * @param headers: message headers, tsField (field that contains timestamp in the webhook) is the only header that sent; empty object is sent if tsField is not set
  * @returns promise
  */
-function sendToEnricher(routingKey, content) {
+function sendToEnricher(routingKey, content, headers) {
 
     return Q.Promise(function (resolve, reject) {
         if (!channel) {
@@ -216,7 +217,8 @@ function sendToEnricher(routingKey, content) {
         } else {
             var bufferNotFull = channel.publish('events-to-enrich', routingKey, new Buffer(content), {
                 mandatory: false,
-                persistent: true
+                persistent: true,
+                headers: headers
             });
 
             //amqplib returns true even if RabbitMQ is down, the send operation will fail

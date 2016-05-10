@@ -36,9 +36,18 @@ function initEtcd() {
             logger.log('CRITICAL', 'persistence-controller', 'Etcd is not configured properly');
             reject(new Error('Etcd is not configured properly'));
         } else {
-            etcd.version(function (err) {
+            etcd.get(BASE_PATH, function(err){
                 if (err) {
-                    reject(new Error('Error accessing Etcd on ' + etcdParams.hostname + ':' + etcdParams.port));
+                    logger.warn('Checked the existence of ', BASE_PATH, ' directory and the result is: ', err);
+                    etcd.mkdir(BASE_PATH, function (err) {
+                        if (err) {
+                            logger.error(BASE_PATH, ' folder does not exist and cannot create it', err);
+                            reject(new Error('Error accessing Etcd on ' + etcdParams.hostname + ':' + etcdParams.port));
+                        } else {
+                            logger.log('INFO', 'persistence-controller', 'Cannot connect ' + BASE_PATH + ' folder on ' + etcdParams.hostname + ':' + etcdParams.port);
+                            resolve();
+                        }
+                    });
                 } else {
                     logger.log('INFO', 'persistence-controller', 'Connected to Etcd on ' + etcdParams.hostname + ':' + etcdParams.port);
                     resolve();
@@ -74,7 +83,7 @@ function add(key, value) {
  Get webhook token details
  Parameters:
  - webhook token
- Returns: a promise with token details, if exists or error, when no valid token
+ Returns: a promise with webhook details, if exists or error
  */
 function getTokenDetails(key) {
     var deferred = Q.defer();
@@ -83,6 +92,26 @@ function getTokenDetails(key) {
             deferred.reject(err.message + '(' + key + ')');
         } else {
             deferred.resolve(data);
+        }
+    });
+    return deferred.promise;
+}
+
+/*
+ Get all webhook details
+ Returns: a promise with a list of webhooks details, if exist or error
+ */
+function getAllDetails() {
+    var deferred = Q.defer();
+
+    etcd.get(BASE_PATH, {recursive: true}, function (err, data) {
+        console.log(require('util').inspect(err, true, 10));
+        if (err) {
+            deferred.reject(err.message + '(' + BASE_PATH + ')');
+        } else {
+            var usefulData = data.node.nodes;
+            console.log('useful data: ' + JSON.stringify(data));
+            deferred.resolve(usefulData);
         }
     });
     return deferred.promise;
@@ -103,32 +132,33 @@ function deleteTokenDetails(key) {
 
 
 /*
-var database = {};
+ var database = {};
 
-function insert(key, value) {
-    database[key] = value;
-    return database[key];
-}
+ function insert(key, value) {
+ database[key] = value;
+ return database[key];
+ }
 
-function getByKey(key) {
-    return database[key];
-}
+ function getByKey(key) {
+ return database[key];
+ }
 
-function getFullDatabase() {
-    return database;
-}
+ function getFullDatabase() {
+ return database;
+ }
 
-function cleanDB() {
-    database = {};
-}
+ function cleanDB() {
+ database = {};
+ }
 
-exports.add = insert;
-exports.getByKey = getByKey;
-exports.getFullDatabase = getFullDatabase;
-exports.cleanDB = cleanDB;
-*/
+ exports.add = insert;
+ exports.getByKey = getByKey;
+ exports.getFullDatabase = getFullDatabase;
+ exports.cleanDB = cleanDB;
+ */
 
 exports.add = add;
 exports.get = getTokenDetails;
+exports.getAll = getAllDetails;
 exports.delete = deleteTokenDetails;
 exports.initEtcdConnection = initEtcd;

@@ -5,14 +5,14 @@ var chai = require('chai');
 var expect = chai.expect;
 
 var eventHeaders = {
-    'Request URL': 'https://circleci.com/hooks/github',
-    'Request method': 'POST',
-    'content-type': 'application/json',
-    'Expect': 'User-Agent: GitHub-Hookshot/f671e41',
-    'X-GitHub-Delivery': '741e6b80-9f32-11e5-8f65-521db3377f06',
-    'X-GitHub-Event': 'push',
-    'X-Hub-Signature': 'sha1=8eb2fc22c38d33fc3869e192b11666f20bcdec55'
-};
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Expect': '',
+    'User-Agent': 'GitHub-Hookshot/cd33156',
+    'X-GitHub-Delivery': '32c68400-078e-11e6-97e2-99ef6a87688f',
+    'X-GitHub-Event': 'push'
+}
+
 var eventContent = {
     "ref": "refs/heads/master",
     "before": "bd5c21118340b74aa2531aeae8648f217562086d",
@@ -181,6 +181,8 @@ describe('webhook tests', function () {
         var adminName = Date.now();
         var clientId = adminName;
         var tenantId, accessToken, webHookToken;
+        var initialWebhookUrl, initialDatasource, initialEventType;
+        var githubTimestampField = 'commits[*].timestamp';
 
         it('# create tenant', function (done) {
             var options = {
@@ -253,6 +255,26 @@ describe('webhook tests', function () {
             });
         });
 
+        it('# generate invalid web hook - event field is missing', function (done) {
+
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                json: {
+                    'datasource': 'github'
+                }
+            };
+
+            request.post(options, function (err, res, body) {
+                expect(res.statusCode).to.equal(400);
+                done();
+            });
+        });
+
         it('# generate web hook', function (done) {
 
             var options = {
@@ -271,19 +293,27 @@ describe('webhook tests', function () {
             request.post(options, function (err, res, body) {
                 expect(res.statusCode).to.equal(200);
                 webHookToken = body.token;
-                expect(body.hookUrl).to.equal('https://localhost:3000/wh/' + accessToken + '/' + webHookToken);
+                //returned URL is aligned for proxied environment
+                expect(body.hookUrl).to.equal('https://webhook.localhost:3000/wh/' + accessToken + '/' + webHookToken);
                 expect(body.tenantId).to.equal(tenantId);
                 expect(body.datasource).to.equal('github');
                 expect(body.eventType).to.equal('push');
+                initialWebhookUrl = 'https://localhost:3000/wh/' + accessToken + '/' + webHookToken;
+                initialDatasource = body.datasource;
+                initialEventType = body.eventType;
                 done();
             });
         });
 
-        it('# validate url', function(done) {
+        it('# validate url', function (done) {
             var options = {
                 url: 'http://localhost:3000/wh/' + accessToken + '/' + webHookToken,
-                headers: eventHeaders
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
             };
+            console.log('OPTIONS: ' + JSON.stringify(options));
             request.head(options, function (err, res) {
                 expect(res.statusCode).to.equal(200);
                 done();
@@ -297,6 +327,7 @@ describe('webhook tests', function () {
                 headers: eventHeaders,
                 json: eventContent
             };
+            console.log('OPTIONS: ' + JSON.stringify(options));
             request.post(options, function (err, res, body) {
                 expect(res.statusCode).to.equal(204);
                 done();
@@ -311,13 +342,161 @@ describe('webhook tests', function () {
                 headers: eventHeaders,
                 json: eventContent
             };
+            console.log('OPTIONS: ' + JSON.stringify(options));
             request.post(options, function (err, res, body) {
                 expect(res.statusCode).to.equal(400);
                 done();
             });
             var end = Date.now();
             console.log('Duration: ' + (end - start));
-        })
+        });
+
+        //when update the existing WH configuration, the only thing that can change is a timestamp field definiton
+        it("# add timestamp field to the webhook definition", function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                json: {
+                    'datasource': 'github',
+                    'event': 'push',
+                    'tsField': githubTimestampField
+                }
+            };
+
+            request.post(options, function (err, res, body) {
+                expect(res.statusCode).to.equal(200);
+                webHookToken = body.token;
+                expect(body.hookUrl).to.equal(initialWebhookUrl);
+                expect(body.tenantId).to.equal(tenantId);
+                expect(body.datasource).to.equal(initialDatasource);
+                expect(body.eventType).to.equal(initialEventType);
+                expect(body.tsField).to.equal(githubTimestampField);
+                done();
+            });
+        });
+
+        //when tsField is not provided on update, we continue use the existing one
+        it("# keep using the existing timestamp field on update", function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                json: {
+                    'datasource': 'github',
+                    'event': 'push'
+                }
+            };
+
+            request.post(options, function (err, res, body) {
+                expect(res.statusCode).to.equal(200);
+                webHookToken = body.token;
+                expect(body.hookUrl).to.equal(initialWebhookUrl);
+                expect(body.tenantId).to.equal(tenantId);
+                expect(body.datasource).to.equal(initialDatasource);
+                expect(body.eventType).to.equal(initialEventType);
+                expect(body.tsField).to.equal(githubTimestampField);
+                done();
+            });
+        });
+
+        //when tsField is provided on update, and set to empty string explicitly we continue use the existing one
+        it("# keep using the existing timestamp field on update", function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                json: {
+                    'datasource': 'github',
+                    'event': 'push',
+                    'tsField': ''
+                }
+            };
+
+            request.post(options, function (err, res, body) {
+                expect(res.statusCode).to.equal(200);
+                webHookToken = body.token;
+                expect(body.hookUrl).to.equal(initialWebhookUrl);
+                expect(body.tenantId).to.equal(tenantId);
+                expect(body.datasource).to.equal(initialDatasource);
+                expect(body.eventType).to.equal(initialEventType);
+                expect(body.tsField).to.empty;
+                done();
+            });
+        });
+
+        //get all webhooks configured for the tenant
+        it("# list webhooks", function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/config',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            };
+
+            request.get(options, function (err, res) {
+                expect(res.statusCode).to.equal(200);
+                console.log(res.body);
+                var parsed = JSON.parse(res.body);
+                expect(parsed[0].hookUrl).to.equal(initialWebhookUrl);
+                expect(parsed[0].tenantId).to.equal(tenantId);
+                expect(parsed[0].datasource).to.equal(initialDatasource);
+                expect(parsed[0].eventType).to.equal(initialEventType);
+                expect(parsed[0].tsField).to.empty;
+                done();
+            });
+        });
+
+        //get webhook details configured for the tenant
+        it("# get webhook details", function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/config/'+webHookToken,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            };
+
+            request.get(options, function (err, res) {
+                expect(res.statusCode).to.equal(200);
+                var parsed = JSON.parse(res.body);
+                expect(parsed.hookUrl).to.equal(initialWebhookUrl);
+                expect(parsed.tenantId).to.equal(tenantId);
+                expect(parsed.datasource).to.equal(initialDatasource);
+                expect(parsed.eventType).to.equal(initialEventType);
+                expect(parsed.tsField).to.empty;
+                done();
+            });
+        });
+
+        //get webhook by token(?) configured for the tenant
+        it("# delete webhook", function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/config/'+webHookToken,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            };
+
+            request.delete(options, function (err, res) {
+                expect(res.statusCode).to.equal(204);
+                done();
+            });
+        });
 
     });
 

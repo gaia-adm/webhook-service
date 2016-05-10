@@ -9,11 +9,14 @@
  * Without this function only root error details are logged.
  */
 function getFullError(err) {
-    var msg = err.stack;
-    var curr = err;
-    while (curr.cause && curr.cause()) {
-        curr = curr.cause();
-        msg = msg + '\nCaused by:\n' + curr.stack;
+    var msg = err.stack ? err.stack : err ;
+    //if stacktrace available
+    if(msg !== err ) {
+        var curr = err;
+        while (curr.cause && curr.cause()) {
+            curr = curr.cause();
+            msg = msg + '\nCaused by:\n' + curr.stack;
+        }
     }
     return msg;
 }
