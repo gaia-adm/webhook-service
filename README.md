@@ -63,7 +63,7 @@ HTTP-200 (list of webhooks details - the same as for webhook creation)
 
 **Delete webhook configuration**:
 ```
-DELETE: https://webhook.mydomain.gaiahub.io/wh/config/webhook-token
+DELETE: https://webhook.mydomain.gaiahub.io/wh/config/<webhook-token>
     Content-Type: application/json
     Accept: application/json
     Authorization: Bearer <accesstoken>
@@ -73,7 +73,7 @@ HTTP-204
 
 **Webhook validation**:
 ```
-HEAD: https://webhook.mydomain.gaiahub.io/wh/config/webhook-token
+HEAD: https://webhook.mydomain.gaiahub.io/wh/config/<webhook-token>
     Content-Type: application/json
     Accept: application/json
     Authorization: Bearer <accesstoken>
