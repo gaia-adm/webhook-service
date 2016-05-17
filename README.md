@@ -16,7 +16,7 @@ POST: https://webhook.mydomain.gaiahub.io/wh/config
     Authorization: Bearer <accesstoken>
     { "datasource":"github",
       "event": "push",
-      "tsField": "commits[*].timestamp"}
+      "tsField": "commits[0].timestamp"}
 ```
 NOTES:
   - The same API creates the new webhook configuration or updates the existing one, if webhook already exists in the tenant for datasource and event provided
@@ -31,7 +31,7 @@ NOTES:
         "apiToken": "f0cf847f-0bf4-4777-9a28-59b7a4b48309",
         "tenantId": 5618780000,
         "token": "7a8b7747fb02189cee0a3e62d0e717460923d945",
-        "tsField": "commits[*].timestamp",
+        "tsField": "commits[0].timestamp",
         "hookUrl": "https://webhook.mydomain.gaiahub.io/wh/f0cf847f-0bf4-4777-9a28-59b7a4b48309/7a8b7747fb02189cee0a3e62d0e717460923d945"
     }
 ```
