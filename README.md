@@ -43,7 +43,7 @@ NOTE: Meanwhile there is no restriction of using webhook generated for certain e
 ### Other APIs:
 **Get webhook details**:
 ```
-GET: https://webhook.mydomain.gaiahub.io/wh/config/webhook-token
+GET: https://webhook.mydomain.gaiahub.io/wh/config/<webhook-token>
     Content-Type: application/json
     Accept: application/json
     Authorization: Bearer <accesstoken>
