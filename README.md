@@ -26,7 +26,7 @@ NOTES:
 ```
     {
         "datasource": "github",
-        "eventType": "push",
+        "event": "push",
         "createdAt": 1450778008713,
         "apiToken": "f0cf847f-0bf4-4777-9a28-59b7a4b48309",
         "tenantId": 5618780000,
@@ -38,7 +38,7 @@ NOTES:
 
 ### Pushing data
 Add the hookUrl (see above) to webhooks configuration
-NOTE: Meanwhile there is no restriction of using webhook generated for certain eventType/datasource with different eventType/datasource so use carefully.
+NOTE: Meanwhile there is no restriction of using webhook generated for certain event/datasource with different event/datasource so use carefully.
 
 ### Other APIs:
 **Get webhook details**:
@@ -90,13 +90,13 @@ If both are valid (e.g., existing in the system):
 ### Supported webhooks
 Since the entire flow - from sending data to storing it into ES - is very generic and data is fluid, we can accept webhook for any event type from any source sending JSON data.
 However it can bring some benefits, if we declare a list of event/datasources that we support, while the names of the events can be different in different datasources. Something like:
-  - eventType: **push** supported for datasources:
+  - event: **push** supported for datasources:
     - [Github] (https://developer.github.com/webhooks/)
     - [Bitbucket] (https://confluence.atlassian.com/bitbucket/manage-webhooks-735643732.html)
-  - eventType: **issue_change** supported for datasources:
+  - event: **issue_change** supported for datasources:
     - [Github] (https://developer.github.com/webhooks/)
     - [JIRA] (https://developer.atlassian.com/jiradev/jira-apis/webhooks)
-  - eventType: **build**  supported for datasources:
+  - event: **build**  supported for datasources:
     - [Jenkins] (https://wiki.jenkins-ci.org/display/JENKINS/Notification+Plugin)
     - [CircleCI] (https://circleci.com/docs/configuration#notify)
     - [TravisCI] (https://docs.travis-ci.com/user/notifications/#Webhook-notification)
