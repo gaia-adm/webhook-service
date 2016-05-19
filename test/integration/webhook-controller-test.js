@@ -182,7 +182,7 @@ describe('webhook tests', function () {
         var clientId = adminName;
         var tenantId, accessToken, webHookToken;
         var initialWebhookUrl, initialDatasource, initialEventType;
-        var githubTimestampField = 'commits[*].timestamp';
+        var githubTimestampField = 'commits[0].timestamp';
 
         it('# create tenant', function (done) {
             var options = {
@@ -297,10 +297,10 @@ describe('webhook tests', function () {
                 expect(body.hookUrl).to.equal('https://webhook.localhost:3000/wh/' + accessToken + '/' + webHookToken);
                 expect(body.tenantId).to.equal(tenantId);
                 expect(body.datasource).to.equal('github');
-                expect(body.eventType).to.equal('push');
+                expect(body.event).to.equal('push');
                 initialWebhookUrl = 'https://localhost:3000/wh/' + accessToken + '/' + webHookToken;
                 initialDatasource = body.datasource;
-                initialEventType = body.eventType;
+                initialEventType = body.event;
                 done();
             });
         });
@@ -373,7 +373,7 @@ describe('webhook tests', function () {
                 expect(body.hookUrl).to.equal(initialWebhookUrl);
                 expect(body.tenantId).to.equal(tenantId);
                 expect(body.datasource).to.equal(initialDatasource);
-                expect(body.eventType).to.equal(initialEventType);
+                expect(body.event).to.equal(initialEventType);
                 expect(body.tsField).to.equal(githubTimestampField);
                 done();
             });
@@ -400,7 +400,7 @@ describe('webhook tests', function () {
                 expect(body.hookUrl).to.equal(initialWebhookUrl);
                 expect(body.tenantId).to.equal(tenantId);
                 expect(body.datasource).to.equal(initialDatasource);
-                expect(body.eventType).to.equal(initialEventType);
+                expect(body.event).to.equal(initialEventType);
                 expect(body.tsField).to.equal(githubTimestampField);
                 done();
             });
@@ -428,7 +428,7 @@ describe('webhook tests', function () {
                 expect(body.hookUrl).to.equal(initialWebhookUrl);
                 expect(body.tenantId).to.equal(tenantId);
                 expect(body.datasource).to.equal(initialDatasource);
-                expect(body.eventType).to.equal(initialEventType);
+                expect(body.event).to.equal(initialEventType);
                 expect(body.tsField).to.empty;
                 done();
             });

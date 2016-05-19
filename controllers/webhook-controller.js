@@ -34,12 +34,14 @@ router.post('/wh/config', function (req, res) {
 
     Q.fcall(function () {
         //validate input
-        if (!datasource || !eventType) {
+        if (!datasource) {
             logger.error('Invalid input for POST request of tenant ' + req.oauth.bearerToken.tenantId + '; datasource: ' + datasource + ', event: ' + eventType);
             res.status(HttpStatus.BAD_REQUEST).json({
                 status: 'error',
-                msg: 'Bad request: datasource'
+                msg: 'Bad request: datasource must be provided'
             });
+            res.end();
+            throw new Error('Bad request: datasource must be provided');
         }
         if (!eventType) {
             logger.error('Invalid input for POST request of tenant ' + req.oauth.bearerToken.tenantId + '; datasource: ' + datasource + ', event: ' + eventType);
@@ -47,6 +49,8 @@ router.post('/wh/config', function (req, res) {
                 status: 'error',
                 msg: 'Bad request: event must be provided'
             });
+            res.end();
+            throw new Error('Bad request:  event must be provided');
         }
     }).then(function () {
         return db.getAll();
@@ -96,6 +100,9 @@ router.post('/wh/config', function (req, res) {
                 respBody.hookUrl = 'https://webhook.' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
             }
             Q.fcall(db.add, respBody.token, JSON.stringify(respBody)).then(function () {
+                //ugly workaround due to naming mismatch - customer-facing "event" vs. internally used "eventType"
+                respBody.event=respBody.eventType;
+                delete respBody.eventType;
                 res.status(HttpStatus.OK).json(respBody);
             }).fail(function (err) {
                 res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({status: 'error', msg: err.message});
