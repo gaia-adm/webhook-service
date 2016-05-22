@@ -101,7 +101,7 @@ router.post('/wh/config', function (req, res) {
             }
             Q.fcall(db.add, respBody.token, JSON.stringify(respBody)).then(function () {
                 //ugly workaround due to naming mismatch - customer-facing "event" vs. internally used "eventType"
-                respBody.event=respBody.eventType;
+                respBody.event = respBody.eventType;
                 delete respBody.eventType;
                 res.status(HttpStatus.OK).json(respBody);
             }).fail(function (err) {
@@ -216,12 +216,12 @@ router.head('/wh/:oauthToken/:hookToken', function (req, res) {
     db.get(req.params.hookToken).then(function (tokenDetails) {
         if (tokenDetails.node.value) {
             var jsonValue = validateTokenDetails(tokenDetails);
-            if (jsonValue) {
+            if (jsonValue && (req.params.oauthToken === jsonValue.apiToken)) {
                 logger.debug('Webhook URL checked and found valid: ' + fullUrl);
                 res.status(HttpStatus.OK).send();
             } else {
                 //webhook is found but its configuraion is invalid: empty datasource/tenantId/eType
-                var message = 'Webhook details are broken for ' + req.params.hookToken;
+                var message = 'Webhook URL that ends with ' + req.params.hookToken + ' is broken';
                 logger.error(message);
                 res.status(HttpStatus.INTERNAL_SERVER_ERROR).send();
             }
@@ -239,10 +239,20 @@ router.head('/wh/:oauthToken/:hookToken', function (req, res) {
 
 //Post webhook data
 router.post('/wh/:oauthToken/:hookToken', function (req, res) {
+
+    var ct = req.get('Content-Type');
+    if ( !(ct && ct.indexOf('application/json') !== -1) ) {
+        res.sendStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE).end();
+        throw new Error('Unsupported Content-Type: must be application/json, found: ' + ct);
+    }
+
     db.get(req.params.hookToken).then(function (tokenDetails) {
         if (tokenDetails.node.value) {
             logger.trace('TOKEN DETAILS: ' + JSON.stringify(tokenDetails.node.value));
             var jsonValue = JSON.parse(tokenDetails.node.value);
+            if(req.params.oauthToken !== jsonValue.apiToken) {
+                throw new Error('Invalid API token');
+            }
             var eType = jsonValue ? jsonValue.eventType : null;
             var datasource = jsonValue ? jsonValue.datasource : null;
             var tenantId = jsonValue.tenantId;
@@ -277,7 +287,7 @@ router.post('/wh/:oauthToken/:hookToken', function (req, res) {
     }).fail(function (err) {
         //failure due to token problems
         logger.error(getFullError(err));
-        res.status(HttpStatus.BAD_REQUEST).json({status: 'error', msg: 'Invalid token in use'});
+        res.status(HttpStatus.BAD_REQUEST).json({status: 'error', msg: err.message});
     });
 
 });

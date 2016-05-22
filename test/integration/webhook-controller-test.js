@@ -320,6 +320,36 @@ describe('webhook tests', function () {
             });
         });
 
+        it('# validate bad token url', function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/' + accessToken + '/' + ~webHookToken,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+            };
+            console.log('OPTIONS: ' + JSON.stringify(options));
+            request.head(options, function (err, res) {
+                expect(res.statusCode).to.equal(400);
+                done();
+            });
+        });
+
+        it('# validate bad API token url', function (done) {
+            var options = {
+                url: 'http://localhost:3000/wh/' + ~accessToken + '/' + webHookToken,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+            };
+            console.log('OPTIONS: ' + JSON.stringify(options));
+            request.head(options, function (err, res) {
+                expect(res.statusCode).to.equal(500);
+                done();
+            });
+        });
+
         it('# push data', function (done) {
 
             var options = {
@@ -338,7 +368,23 @@ describe('webhook tests', function () {
         it('# push data with INVALID hook token', function (done) {
 
             var options = {
-                url: 'http://localhost:3000/wh/' + accessToken + '/' + webHookToken + 'a',
+                url: 'http://localhost:3000/wh/' + accessToken + '/' + ~webHookToken,
+                headers: eventHeaders,
+                json: eventContent
+            };
+            console.log('OPTIONS: ' + JSON.stringify(options));
+            request.post(options, function (err, res, body) {
+                expect(res.statusCode).to.equal(400);
+                done();
+            });
+            var end = Date.now();
+            console.log('Duration: ' + (end - start));
+        });
+
+        it('# push data with INVALID API token', function (done) {
+
+            var options = {
+                url: 'http://localhost:3000/wh/' + ~accessToken + '/' + webHookToken + 'a',
                 headers: eventHeaders,
                 json: eventContent
             };
