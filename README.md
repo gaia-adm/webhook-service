@@ -37,8 +37,8 @@ NOTES:
 ```
 
 ### Pushing data
-Add the hookUrl (see above) to webhooks configuration
-Content-Type header must be set to application/json when pushing data (foo/moo; application/sjson; charset-utf8 is also supported). Otherwise HTTP-415 is returned.
+Copy the above hookUrl and paste to webhooks configuration of the datasource system
+"Content-Type" header must be set to application/json when pushing data (foo/moo; application/sjson; charset-utf8 is also supported). Otherwise HTTP-415 is returned.
 NOTE: Meanwhile there is no restriction of using webhook generated for certain event/datasource with different event/datasource so use carefully.
 
 ### Other APIs:
