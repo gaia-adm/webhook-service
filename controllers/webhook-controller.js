@@ -97,7 +97,11 @@ router.post('/wh/config', function (req, res) {
                 respBody.apiToken = req.oauth.bearerToken.accessToken;
                 respBody.tenantId = req.oauth.bearerToken.tenantId;
                 respBody.token = crypto.createSHA1(datasource, eventType, respBody.tenantId, currentTime);
-                respBody.hookUrl = 'https://webhook.' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                if(req.get('Host').startsWith('webhook')){
+                    respBody.hookUrl = 'https://' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                } else {
+                    respBody.hookUrl = 'https://webhook.' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                }
             }
             Q.fcall(db.add, respBody.token, JSON.stringify(respBody)).then(function () {
                 //ugly workaround due to naming mismatch - customer-facing "event" vs. internally used "eventType"
