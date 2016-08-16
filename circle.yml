@@ -11,31 +11,38 @@ dependencies:
     # download update_service script
     - curl -LO https://raw.githubusercontent.com/gaia-adm/gaia-fleet/master/update_service.sh && chmod +x update_service.sh
   override:
+    # build develop mode image
+    - docker build -t gaiaadm/whs:test --build-arg "NODE=develop" .
+    # build production mode image
     - docker build -t gaiaadm/whs .
+    # tag production image with build build labels
     - docker tag gaiaadm/whs gaiaadm/whs:$CIRCLE_BUILD_NUM-$CIRCLE_BRANCH
     - docker tag gaiaadm/whs gaiaadm/whs:$CIRCLE_BRANCH
 test:
   override:
+    # ran RabbitMQ container
     - docker run -d -e "RABBITMQ_PASS=admin" --name rabbitmq gaiaadm/rabbitmq; sleep 10
     # run etcd since we are not on coreos
     - docker run -d --name etcd microbox/etcd:2.1.1 -name etcd --listen-client-urls 'http://0.0.0.0:4001' --advertise-client-urls 'http://0.0.0.0:4001'; sleep 5
     - docker run -d -u jetty --link etcd:etcd -e etcdUrl="http://etcd:4001" -e noDex=true --name sts gaiaadm/sts; sleep 10
-    # run jshint
-    - docker run --name jshint-runner gaiaadm/whs  grunt jshint -v
+    # run jshint on develop image
+    - docker run --name jshint-runner gaiaadm/whs:test  grunt jshint -v
     # run unit tests
-    - docker run --name unit-test-runner gaiaadm/whs  grunt unit -v
+    - docker run --name unit-test-runner gaiaadm/whs:test  grunt unit -v
     - docker cp unit-test-runner:/src/unit-test-results.xml $CIRCLE_TEST_REPORTS
-    # run integration tests
-    - docker run  --name integration-test-runner --link rabbitmq:rabbitmq --link sts:sts --link etcd:etcd -e AMQ_USER="admin" -e AMQ_PASSWORD="admin" -e AMQ_SERVER="rabbitmq:5672" -e ETCD_SERVER="etcd:4001" -e AUTH_SERVER="sts:8080"  -p 3210:3000  -e LOG_LEVEL="DEBUG"  gaiaadm/whs  grunt integration -v
+    # run integration tests with test image
+    - docker run --name integration-test-runner --link rabbitmq:rabbitmq --link sts:sts --link etcd:etcd -e AMQ_USER="admin" -e AMQ_PASSWORD="admin" -e AMQ_SERVER="rabbitmq:5672" -e ETCD_SERVER="etcd:4001" -e AUTH_SERVER="sts:8080"  -p 3210:3000  -e LOG_LEVEL="DEBUG"  gaiaadm/whs:test  grunt integration -v
     - docker cp integration-test-runner:/src/integration-test-results.xml $CIRCLE_TEST_REPORTS
     # run coverage
-    - docker run  --name coverage-runner --link rabbitmq:rabbitmq --link sts:sts --link etcd:etcd -e AMQ_USER="admin" -e AMQ_PASSWORD="admin" -e AMQ_SERVER="rabbitmq:5672" -e ETCD_SERVER="etcd:4001" -e AUTH_SERVER="sts:8080"  -p 3210:3000  -e LOG_LEVEL="DEBUG"  gaiaadm/whs  grunt coverage -v
+    - docker run  --name coverage-runner --link rabbitmq:rabbitmq --link sts:sts --link etcd:etcd -e AMQ_USER="admin" -e AMQ_PASSWORD="admin" -e AMQ_SERVER="rabbitmq:5672" -e ETCD_SERVER="etcd:4001" -e AUTH_SERVER="sts:8080"  -p 3210:3000  -e LOG_LEVEL="DEBUG"  gaiaadm/whs:test  grunt coverage -v
     - docker cp coverage-runner:/src/coverage/ $CIRCLE_TEST_REPORTS
 deployment:
   continuous:
     branch: [master, develop, /.*feature_.*/]
     commands:
+      # login to DockerHub
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      # push production image
       - docker push gaiaadm/whs
       - ./update_service.sh -t $CIRCLE_BRANCH -b $CIRCLE_BUILD_NUM -f webhook-service.service -n whs
 notify:

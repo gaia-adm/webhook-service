@@ -1,6 +1,8 @@
 .idea
 .git
 .gitignore
+circle.yml
+README.md
 webhook-service.service
 doc
 node_modules
