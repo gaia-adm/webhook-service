@@ -13,7 +13,7 @@
 # limitations under the License.
 
 [Unit]
-Description=Gaia Task Configuration Service
+Description=Gaia Webhook Service
 Documentation=https://github.com/gaia-adm/webhook-service
 
 After=registrator.service
