@@ -282,6 +282,7 @@ describe('webhook tests', function () {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
+                    'X-ORIG-SERVER': 'localhost',
                     'Authorization': 'Bearer ' + accessToken
                 },
                 json: {
@@ -294,11 +295,11 @@ describe('webhook tests', function () {
                 expect(res.statusCode).to.equal(200);
                 webHookToken = body.token;
                 //returned URL is aligned for proxied environment
-                expect(body.hookUrl).to.equal('https://webhook.localhost:3000/wh/' + accessToken + '/' + webHookToken);
+                expect(body.hookUrl).to.equal('https://webhook.localhost/wh/' + accessToken + '/' + webHookToken);
                 expect(body.tenantId).to.equal(tenantId);
                 expect(body.datasource).to.equal('github');
                 expect(body.event).to.equal('push');
-                initialWebhookUrl = 'https://localhost:3000/wh/' + accessToken + '/' + webHookToken;
+                initialWebhookUrl = 'https://webhook.localhost/wh/' + accessToken + '/' + webHookToken;
                 initialDatasource = body.datasource;
                 initialEventType = body.event;
                 done();
@@ -404,6 +405,7 @@ describe('webhook tests', function () {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
+                    'X-ORIG-SERVER': 'localhost',
                     'Authorization': 'Bearer ' + accessToken
                 },
                 json: {
@@ -432,6 +434,7 @@ describe('webhook tests', function () {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
+                    'X-ORIG-SERVER': 'localhost',
                     'Authorization': 'Bearer ' + accessToken
                 },
                 json: {
@@ -459,6 +462,7 @@ describe('webhook tests', function () {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
+                    'X-ORIG-SERVER': 'localhost',
                     'Authorization': 'Bearer ' + accessToken
                 },
                 json: {
