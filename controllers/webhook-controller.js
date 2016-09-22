@@ -73,7 +73,11 @@ router.post('/wh/config', function (req, res) {
                 respBody.apiToken = req.oauth.bearerToken.accessToken;
                 respBody.tenantId = req.oauth.bearerToken.tenantId;
                 respBody.token = data4.token;
-                respBody.hookUrl = 'https://' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                if(req.get('X-ORIG-SERVER').startsWith('webhook')){
+                    respBody.hookUrl = 'https://' + req.get('X-ORIG-SERVER') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                } else {
+                    respBody.hookUrl = 'https://webhook.' + req.get('X-ORIG-SERVER') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                }
                 if (typeof timestampField === 'undefined' || timestampField === null) {
                     //if no timestampField or sent null, continue using the existing one
                     respBody.tsField = data4.tsField;
@@ -97,10 +101,10 @@ router.post('/wh/config', function (req, res) {
                 respBody.apiToken = req.oauth.bearerToken.accessToken;
                 respBody.tenantId = req.oauth.bearerToken.tenantId;
                 respBody.token = crypto.createSHA1(datasource, eventType, respBody.tenantId, currentTime);
-                if(req.get('Host').startsWith('webhook')){
-                    respBody.hookUrl = 'https://' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                if(req.get('X-ORIG-SERVER').startsWith('webhook')){
+                    respBody.hookUrl = 'https://' + req.get('X-ORIG-SERVER') + '/wh/' + respBody.apiToken + '/' + respBody.token;
                 } else {
-                    respBody.hookUrl = 'https://webhook.' + req.get('Host') + '/wh/' + respBody.apiToken + '/' + respBody.token;
+                    respBody.hookUrl = 'https://webhook.' + req.get('X-ORIG-SERVER') + '/wh/' + respBody.apiToken + '/' + respBody.token;
                 }
             }
             Q.fcall(db.add, respBody.token, JSON.stringify(respBody)).then(function () {

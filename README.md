@@ -13,6 +13,7 @@ Service for generating webhook tokens and accepting webhooks data
 POST: https://webhook.mydomain.gaiahub.io/wh/config
     Content-Type: application/json
     Accept: application/json
+    X-ORIG-SERVER: <mydomain.gaiahub.io>
     Authorization: Bearer <accesstoken>
     { "datasource":"github",
       "event": "push",
