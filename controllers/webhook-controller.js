@@ -52,6 +52,15 @@ router.post('/wh/config', function (req, res) {
             res.end();
             throw new Error('Bad request:  event must be provided');
         }
+        if(!req.get('X-ORIG-SERVER')) {
+            logger.error('Mandatory header is not provided, please check the documentation');
+            res.status(HttpStatus.BAD_REQUEST).json({
+                status: 'error',
+                msg: 'Bad request: Mandatory header is not provided'
+            });
+            res.end();
+            throw new Error('Bad request: Mandatory header is not provided');
+        }
     }).then(function () {
         return db.getAll();
     }).then(function (data) {
