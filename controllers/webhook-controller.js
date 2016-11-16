@@ -5,8 +5,11 @@ var logger = log4js.getLogger('webhook-controller.js');
 var errorUtils = require('../helpers/error-utils');
 var getFullError = errorUtils.getFullError;
 
+var morgan = require('morgan');
+
 var express = require('express');
 var router = express.Router();
+router.use(morgan(':date[iso] HTTP/:http-version" :method :url :status :response-time[digits] :res[content-length] :referrer agent:user-agent'));
 var HttpStatus = require('http-status-codes');
 var Q = require('q');
 
