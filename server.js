@@ -9,6 +9,7 @@ var logger = log4js.getLogger('server.js');
 var errorUtils = require('./helpers/error-utils.js');
 var getFullError = errorUtils.getFullError;
 
+var morgan = require('morgan');
 
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -17,7 +18,7 @@ var Q = require('q');
 var app = express();
 var server;
 var down;
-app.use(logger('combined'));
+app.use(morgan(':date[iso] HTTP/:http-version" :method :url :status :response-time[digits] :res[content-length] :referrer agent:user-agent'));
 app.use(bodyParser.json());
 app.use(require('./controllers'));
 var amqpController = require('./controllers/amqp-controller');
@@ -62,17 +63,17 @@ var shutdown = function () {
 };
 
 process.on('SIGBREAK', function () {
-    Q.fcall(shutdown()).finally(function (code) {
+    Q.fcall(shutdown()).finally(function () {
         logger.debug('Shutting down as SIGBREAK received')
     });
 });
 process.on('SIGTERM', function () {
-    Q.fcall(shutdown()).finally(function (code) {
+    Q.fcall(shutdown()).finally(function () {
         logger.debug('Shutting down as SIGTERM received')
     });
 });
 process.on('SIGINT', function () {
-    Q.fcall(shutdown()).finally(function (code) {
+    Q.fcall(shutdown()).finally(function () {
         logger.debug('Shutting down as SIGINT received')
     });
 });
