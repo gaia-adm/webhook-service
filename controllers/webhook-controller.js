@@ -82,6 +82,7 @@ router.post('/wh/config', function (req, res) {
                 respBody.apiToken = req.oauth.bearerToken.accessToken;
                 respBody.tenantId = req.oauth.bearerToken.tenantId;
                 respBody.token = data4.token;
+                logger.debug('X-ORIG-SERVER is ' + req.get('X-ORIG-SERVER'));
                 if(req.get('X-ORIG-SERVER').startsWith('webhook')){
                     respBody.hookUrl = 'https://' + req.get('X-ORIG-SERVER') + '/wh/' + respBody.apiToken + '/' + respBody.token;
                 } else {

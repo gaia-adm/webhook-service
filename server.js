@@ -17,6 +17,7 @@ var Q = require('q');
 var app = express();
 var server;
 var down;
+app.use(logger('combined'));
 app.use(bodyParser.json());
 app.use(require('./controllers'));
 var amqpController = require('./controllers/amqp-controller');
